@@ -1,8 +1,10 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { FileText, Wrench, Calculator, ArrowRight } from "lucide-react";
 
 const FeaturesSection = ({ sectionRef }) => {
+    const navigate = useNavigate();
 
     return (
         <section id="features" className="py-16 sm:py-32 px-4 sm:px-6 lg:px-8 scroll-mt-16 relative overflow-hidden">
@@ -66,12 +68,7 @@ const FeaturesSection = ({ sectionRef }) => {
                 {/* Secondary Button */}
                 <div className="flex justify-center mt-6 sm:mt-12 md:mt-16">
                     <Button
-                        onClick={() => {
-                            const contactSection = document.getElementById('contact');
-                            if (contactSection) {
-                                contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                            }
-                        }}
+                        onClick={() => navigate("/signup")}
                         style={{ border: '1px solid #53848F', boxShadow: '0 3px 0px rgba(254, 255, 248, 0.1), 0 3px 7px rgba(254, 255, 248, 0.1)' }}
                         className="text-primary bg-primary-foreground hover:opacity-90 hover:text-primary-foreground rounded-2xl sm:rounded-4xl text-base sm:text-xl md:text-2xl lg:text-3xl px-6 py-6 sm:px-8 sm:py-6 md:px-12 md:py-6 lg:px-16 lg:py-10 min-w-[200px] sm:min-w-[220px] md:min-w-[250px] flex items-center justify-center gap-2 sm:gap-2"
                     >

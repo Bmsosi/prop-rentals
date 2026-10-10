@@ -1,8 +1,14 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
 
 const PricingSection = ({ sectionRef }) => {
+    const navigate = useNavigate();
+
+    const handleGetStarted = () => {
+        navigate("/signup");
+    };
 
     return (
         <section id="pricing" className="pt-8 py-16 sm:pt-16 sm:py-32 px-4 sm:px-6 lg:px-8 scroll-mt-24 relative overflow-hidden">
@@ -52,12 +58,7 @@ const PricingSection = ({ sectionRef }) => {
                             </ul>
 
                             <Button
-                                onClick={() => {
-                                    const contactSection = document.getElementById('contact');
-                                    if (contactSection) {
-                                        contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                    }
-                                }}
+                                onClick={handleGetStarted}
                                 style={{ backgroundColor: '#53848F', color: 'white' }}
                                 className="w-full py-3 sm:py-4 md:py-6 px-4 sm:px-5 md:px-6 rounded-lg sm:rounded-xl text-sm sm:text-base md:text-lg font-semibold transition-colors duration-300 hover:opacity-90 mt-auto"
                             >
@@ -97,12 +98,7 @@ const PricingSection = ({ sectionRef }) => {
                             </ul>
 
                             <Button
-                                onClick={() => {
-                                    const contactSection = document.getElementById('contact');
-                                    if (contactSection) {
-                                        contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                    }
-                                }}
+                                onClick={handleGetStarted}
                                 className="w-full py-3 sm:py-4 md:py-6 px-4 sm:px-5 md:px-6 rounded-lg sm:rounded-xl bg-white text-primary text-sm sm:text-base md:text-lg font-semibold transition-colors duration-300 hover:bg-white/90 mt-auto"
                             >
                                 Get Started
@@ -137,12 +133,7 @@ const PricingSection = ({ sectionRef }) => {
                             </ul>
 
                             <Button
-                                onClick={() => {
-                                    const contactSection = document.getElementById('contact');
-                                    if (contactSection) {
-                                        contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                    }
-                                }}
+                                onClick={handleGetStarted}
                                 className="w-full py-3 sm:py-4 md:py-6 px-4 sm:px-5 md:px-6 rounded-lg sm:rounded-xl bg-white text-primary text-sm sm:text-base md:text-lg font-semibold transition-colors duration-300 hover:bg-white/90 mt-auto"
                             >
                                 Get Started
