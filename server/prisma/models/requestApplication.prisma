@@ -1,0 +1,54 @@
+model RequestApplication {
+  id             String            @id @default(cuid())
+  publicId       String            @unique
+  listingId      String
+  tenantId       String?
+  landlordId     String
+  fullName       String?
+  email          String?
+  phone          String?
+  dateOfBirth    DateTime?
+  monthlyIncome  Float?
+  currentAddress String?
+  moveInDate     DateTime?
+  occupants      Json?
+  pets           Json?
+  documents      Json?
+  references     Json?
+  message        String? // store requirements of the contact as json data
+  status         ApplicationStatus @default(PENDING)
+  reviewedBy     String?
+  reviewedAt     DateTime?
+  decisionNotes  String?
+  leaseId        String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  expirationDate DateTime?
+  listing        Listing           @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  landlord       User              @relation("LandlordApplications", fields: [landlordId], references: [id])
+  tenant         User?             @relation("TenantApplications", fields: [tenantId], references: [id])
+  lease          Lease?            @relation(fields: [leaseId], references: [id])
+  employmentInfo EmploymentInfo[]
+
+  @@index([listingId])
+  @@index([landlordId])
+  @@index([tenantId])
+  @@index([publicId])
+  @@index([status])
+}
+
+model EmploymentInfo {
+  id            String             @id @default(cuid())
+  applicationId String
+  employerName  String
+  jobTitle      String
+  income        Float?
+  duration      String?
+  address       String?
+  proofDocument String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  application   RequestApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+}

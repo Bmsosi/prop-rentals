@@ -1,0 +1,72 @@
+model Listing {
+  id         String @id @default(cuid())
+  landlordId String
+
+  // Property Details Section
+  title           String
+  propertyType    PropertyType
+  propertyOwner   String?
+  bedrooms        Int?
+  bathrooms       Int?
+  totalSquareFeet Int?
+  yearBuilt       Int?
+
+  // Address Section
+  country       String
+  state         String
+  city          String
+  streetAddress String
+  zipCode       String?
+
+  // Rental Information Section
+  rentCycle           RentCycle
+  rentAmount          Float
+  securityDeposit     Float?
+  petDeposit          Float?
+  availableDate       DateTime
+  status              ListingStatus        @default(ACTIVE)
+  description         String?
+  contactName         String?
+  phoneNumber         String?
+  email               String?
+  notes               String?
+  landlord            User                 @relation("LandlordListings", fields: [landlordId], references: [id], onDelete: Cascade)
+  amenities           ListingAmenity[]
+  images              ListingImage[]
+  leases              Lease[]
+  maintenanceRequests MaintenanceRequest[]
+  applications        RequestApplication[]
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  customLeases CustomLease[]
+
+  @@index([landlordId])
+  @@index([city, propertyType])
+  @@index([rentCycle])
+  @@index([availableDate])
+}
+
+model ListingAmenity {
+  id        String @id @default(cuid())
+  listingId String
+  name      String
+
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([listingId, name])
+  @@index([listingId])
+}
+
+model ListingImage {
+  id        String   @id @default(cuid())
+  listingId String
+  url       String
+  isPrimary Boolean  @default(false)
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([listingId, url])
+  @@index([listingId])
+}

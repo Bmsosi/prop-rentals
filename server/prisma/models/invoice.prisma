@@ -1,0 +1,29 @@
+model Invoice {
+  id                    String              @id @default(cuid())
+  maintenanceRequestId  String
+  maintenanceRequest    MaintenanceRequest  @relation(fields: [maintenanceRequestId], references: [id], onDelete: Cascade)
+  paymentId             String?             @unique
+  payment               Payment?            @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  description           String
+  amount                Float
+  status                InvoiceStatus       @default(PENDING)
+  sharedWithTenant      Boolean             @default(true)
+  sharedWithLandlord    Boolean             @default(true)
+  createdById           String?
+  createdBy             User?               @relation("InvoiceCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdByRole         UserRole?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@index([maintenanceRequestId])
+  @@index([paymentId])
+  @@index([createdById])
+  @@map("invoices")
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+

@@ -1,0 +1,144 @@
+// ========== PROPERTY & LEASE ENUMS ==========
+enum PropertyType {
+  APARTMENT
+  CONDO
+  TOWNHOUSE
+  MULTI_FAMILY
+  SINGLE_FAMILY
+  STUDIO
+  INDUSTRIAL
+  OFFICE
+  RETAIL
+  SHOPPING_CENTER
+  STORAGE
+  PARKING_SPACE
+  WAREHOUSE
+}
+
+enum PropertyCategory {
+  RESIDENTIAL
+  COMMERCIAL
+}
+
+enum ResidentialType {
+  APARTMENT
+  CONDO
+  TOWNHOUSE
+  MULTI_FAMILY
+  SINGLE_FAMILY
+  STUDIO
+}
+
+enum CommercialType {
+  INDUSTRIAL
+  OFFICE
+  RETAIL
+  SHOPPING_CENTER
+  STORAGE
+  PARKING_SPACE
+  WAREHOUSE
+}
+
+enum RentCycle {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum LeaseStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  TERMINATED
+}
+
+enum LeaseTermType {
+  LONG_TERM
+  MONTH_TO_MONTH
+  YEAR_TO_YEAR
+}
+
+enum NoticeType {
+  LEGAL_MINIMUM
+  MORE_THAN_MINIMUM
+}
+
+enum DepositNoticeType {
+  LEGAL_MAXIMUM
+  LESS_THAN_MINIMUM
+}
+
+enum LandlordType {
+  INDIVIDUAL
+  CORPORATION
+}
+
+// ========== USER & ROLES ==========
+enum UserRole {
+  ADMIN
+  TENANT
+}
+
+// ========== MAINTENANCE ==========
+enum MaintenanceStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum MaintenancePriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum MaintenanceCategory {
+  PLUMBING
+  ELECTRICAL
+  HVAC
+  APPLIANCE
+  STRUCTURAL
+  PEST_CONTROL
+  CLEANING
+  LANDSCAPING
+  SECURITY
+  OTHER
+}
+
+enum ApplicationStatus {
+  NEW
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum LeaseType {
+  STANDARD
+  CUSTOM
+}
+
+enum ListingStatus {
+  ACTIVE
+  RENTED
+}
+
+// ========== PAYMENT ==========
+enum PaymentType {
+  RENT
+  DEPOSIT
+  MAINTENANCE
+  REFUND
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+}

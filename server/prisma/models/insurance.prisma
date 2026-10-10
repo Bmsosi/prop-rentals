@@ -1,0 +1,43 @@
+enum InsuranceStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRING_SOON
+  EXPIRED
+}
+
+model TenantInsurance {
+  id               String          @id @default(cuid())
+  tenantId         String
+  leaseId          String?
+  customLeaseId    String?
+  providerName     String
+  policyNumber     String
+  coverageType     String
+  coverageAmount   Float?
+  monthlyCost      Float?
+  startDate        DateTime
+  expiryDate       DateTime
+  documentUrl      String
+  documentKey      String
+  status           InsuranceStatus @default(PENDING)
+  verifiedBy       String?
+  verifiedAt       DateTime?
+  rejectionReason  String?
+  notes            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  tenant       User         @relation("TenantInsurances", fields: [tenantId], references: [id], onDelete: Cascade)
+  lease        Lease?       @relation(fields: [leaseId], references: [id], onDelete: SetNull)
+  customLease  CustomLease? @relation(fields: [customLeaseId], references: [id], onDelete: SetNull)
+  verifier     User?        @relation("VerifiedInsurances", fields: [verifiedBy], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([leaseId])
+  @@index([customLeaseId])
+  @@index([status])
+  @@index([expiryDate])
+  @@index([verifiedBy])
+}
+

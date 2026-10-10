@@ -1,0 +1,99 @@
+model Lease {
+  id               String      @id @default(cuid())
+  listingId        String
+  tenantId         String?
+  landlordId       String
+  startDate        DateTime
+  endDate          DateTime
+  rentAmount       Float
+  paymentFrequency RentCycle
+  securityDeposit  Float?
+  paymentMethod    String?
+  leaseStatus      LeaseStatus @default(DRAFT)
+  leaseDocument    String?
+  signedContract   String?
+  contractPdfUrl   String?     // Generated contract PDF saved in S3
+  notes            String?
+
+  propertyCategory PropertyCategory?
+  residentialType  ResidentialType?
+  commercialType   CommercialType?
+  propertyAddress  String?
+  propertyCity     String?
+  propertyState    String?
+  propertyCountry  String?
+  propertyZipCode  String?
+
+  leaseTermType LeaseTermType?
+
+  paymentDay Int? // due day (1–31)
+
+  acceptsCash        Boolean @default(false)
+  acceptsCheque      Boolean @default(false)
+  acceptsDirectDebit Boolean @default(false)
+  acceptsETransfer   Boolean @default(false)
+  acceptsOther       Boolean @default(false)
+  customPaymentInfo  String?
+
+  rentIncreaseNoticeType       NoticeType?
+  customRentIncreaseNoticeDays Int?
+
+  hasSecurityDeposit      Boolean            @default(false)
+  discloseBankInfo        Boolean            @default(false)
+  depositAmount           Float?
+  depositBankName         String?
+  depositAccountInfo      String?
+  depositReturnNoticeType DepositNoticeType?
+  customDepositNoticeDays Int?
+
+  landlordType        LandlordType?
+  landlordFullName    String?
+  landlordEmail       String?
+  landlordPhone       String?
+  landlordAddress     String?
+  additionalLandlords Json?
+
+  tenantFullName    String?
+  tenantEmail       String?
+  tenantPhone       String?
+  tenantOtherPhone  String?
+  tenantOtherEmail  String?
+  additionalTenants Json?
+
+  unitNumber        String?  // Unit/Apt number for rental property
+
+  allowsOccupants   Boolean @default(false)
+  occupants         Json?
+  numberOfOccupants Int?
+
+  // Standard Lease Form Fields (BC Residential Tenancy Agreement)
+  periodicBasis       String? // "weekly", "bi-weekly", "other"
+  periodicOther       String? // Custom periodic basis description
+  fixedEndCondition   String? // "continues", "ends"
+  vacateReason        String? // Required if fixedEndCondition is "ends"
+  petDeposit          Float?
+  petDepositDueDate   DateTime?
+  securityDepositDueDate DateTime?
+  includedServices    Json? // Array of services included in rent
+  parkingSpaces       Int?
+
+  // Termination tracking
+  terminationDate     DateTime?
+  terminationReason   String? // e.g., "Non-payment", "Lease violation", "Mutual agreement", "Other"
+  terminationNotes    String?
+  terminatedBy        String? // User ID who terminated
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  listing             Listing              @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  tenant              User?                @relation("TenantLeases", fields: [tenantId], references: [id])
+  landlord            User                 @relation("LandlordLeases", fields: [landlordId], references: [id])
+  maintenanceRequests MaintenanceRequest[]
+  applications        RequestApplication[]
+  payments            Payment[]
+  insurances          TenantInsurance[]
+
+  @@index([tenantId])
+  @@index([landlordId])
+}

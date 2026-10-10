@@ -1,0 +1,40 @@
+model CustomLease {
+  id         String  @id @default(cuid())
+  listingId  String?
+  landlordId String
+  tenantId   String?
+
+  leaseName    String
+  description  String?
+  propertyType String?
+  fileUrl      String
+
+  leaseStatus LeaseStatus @default(DRAFT)
+
+  // Accounting fields (manually entered from handwritten contract)
+  startDate        DateTime?
+  endDate          DateTime?
+  rentAmount       Float?
+  paymentFrequency RentCycle?
+  securityDeposit  Float?
+  depositAmount    Float?
+  paymentDay       Int?        // Due day (1-31)
+  paymentMethod    String?
+  
+  // Additional accounting metadata
+  accountingNotes  String?      // Any notes about accounting from the contract
+
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  maintenanceRequests MaintenanceRequest[]
+  payments            Payment[]
+  insurances          TenantInsurance[]
+
+  // Relations
+  listing  Listing? @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  tenant   User?    @relation("TenantCustomLeases", fields: [tenantId], references: [id])
+  landlord User     @relation("LandlordCustomLeases", fields: [landlordId], references: [id])
+
+  @@index([listingId])
+  @@index([landlordId])
+}

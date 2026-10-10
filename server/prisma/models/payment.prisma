@@ -1,0 +1,39 @@
+// Payment model for tracking rent and deposit payments
+// Works with both Lease and CustomLease
+
+model Payment {
+  id            String        @id @default(cuid())
+  leaseId       String?       // For standard leases
+  customLeaseId String?       // For custom leases
+  landlordId    String
+  tenantId      String?
+  
+  type          PaymentType
+  amount        Float
+  status        PaymentStatus @default(PENDING)
+  dueDate       DateTime?
+  paidDate      DateTime?
+  
+  paymentMethod String?       // e.g., "Cash", "Check", "Bank Transfer", "e-Transfer"
+  reference     String?       // Transaction reference, check number, etc.
+  notes         String?
+  proofUrl      String?       // Payment receipt/proof upload URL
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relations
+  lease         Lease?        @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  customLease   CustomLease?  @relation(fields: [customLeaseId], references: [id], onDelete: Cascade)
+  landlord      User          @relation("LandlordPayments", fields: [landlordId], references: [id])
+  tenant        User?         @relation("TenantPayments", fields: [tenantId], references: [id])
+  invoice       Invoice?      // One-to-one relation with Invoice
+
+  @@index([leaseId])
+  @@index([customLeaseId])
+  @@index([landlordId])
+  @@index([tenantId])
+  @@index([dueDate])
+  @@index([status])
+}
+

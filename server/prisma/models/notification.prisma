@@ -1,0 +1,37 @@
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  relatedId String? // ID of related entity (e.g., maintenance request ID)
+  metadata  Json? // Store additional data like listing info, unread count, etc.
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  user      User             @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+  @@index([isRead])
+}
+
+enum NotificationType {
+  MAINTENANCE_REQUEST
+  MAINTENANCE_MESSAGE
+  APPLICATION_STATUS
+  LEASE_EXPIRING
+  PAYMENT_DUE
+  PAYMENT_RECEIVED
+  PAYMENT_RECEIPT_UPLOADED
+  PAYMENT_RECEIPT_APPROVED
+  PAYMENT_RECEIPT_REJECTED
+  INSURANCE_UPLOADED
+  INSURANCE_VERIFIED
+  INSURANCE_REJECTED
+  INSURANCE_EXPIRING
+  INSURANCE_EXPIRED
+}
+

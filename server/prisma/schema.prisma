@@ -1,0 +1,683 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ========== ENUMS ==========
+
+// Property & Lease Enums
+enum PropertyType {
+  APARTMENT
+  CONDO
+  TOWNHOUSE
+  MULTI_FAMILY
+  SINGLE_FAMILY
+  STUDIO
+  INDUSTRIAL
+  OFFICE
+  RETAIL
+  SHOPPING_CENTER
+  STORAGE
+  PARKING_SPACE
+  WAREHOUSE
+}
+
+enum PropertyCategory {
+  RESIDENTIAL
+  COMMERCIAL
+}
+
+enum ResidentialType {
+  APARTMENT
+  CONDO
+  TOWNHOUSE
+  MULTI_FAMILY
+  SINGLE_FAMILY
+  STUDIO
+}
+
+enum CommercialType {
+  INDUSTRIAL
+  OFFICE
+  RETAIL
+  SHOPPING_CENTER
+  STORAGE
+  PARKING_SPACE
+  WAREHOUSE
+}
+
+enum RentCycle {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum LeaseStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  TERMINATED
+}
+
+enum LeaseTermType {
+  LONG_TERM
+  MONTH_TO_MONTH
+  YEAR_TO_YEAR
+}
+
+enum NoticeType {
+  LEGAL_MINIMUM
+  MORE_THAN_MINIMUM
+}
+
+enum DepositNoticeType {
+  LEGAL_MAXIMUM
+  LESS_THAN_MINIMUM
+}
+
+enum LandlordType {
+  INDIVIDUAL
+  CORPORATION
+}
+
+enum LeaseType {
+  STANDARD
+  CUSTOM
+}
+
+enum ListingStatus {
+  ACTIVE
+  RENTED
+}
+
+// User & Roles
+enum UserRole {
+  ADMIN
+  LANDLORD
+  TENANT
+}
+
+// Maintenance
+enum MaintenanceStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum MaintenancePriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum MaintenanceCategory {
+  PLUMBING
+  ELECTRICAL
+  HVAC
+  APPLIANCE
+  STRUCTURAL
+  PEST_CONTROL
+  CLEANING
+  LANDSCAPING
+  SECURITY
+  OTHER
+}
+
+// Application
+enum ApplicationStatus {
+  NEW
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+// Payment
+enum PaymentType {
+  RENT
+  DEPOSIT
+  MAINTENANCE
+  REFUND
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+// Invoice
+enum InvoiceStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+// Insurance
+enum InsuranceStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRING_SOON
+  EXPIRED
+}
+
+// Notification
+enum NotificationType {
+  MAINTENANCE_REQUEST
+  MAINTENANCE_MESSAGE
+  APPLICATION_STATUS
+  LEASE_EXPIRING
+  PAYMENT_DUE
+  PAYMENT_RECEIVED
+  PAYMENT_RECEIPT_UPLOADED
+  PAYMENT_RECEIPT_APPROVED
+  PAYMENT_RECEIPT_REJECTED
+  INSURANCE_UPLOADED
+  INSURANCE_VERIFIED
+  INSURANCE_REJECTED
+  INSURANCE_EXPIRING
+  INSURANCE_EXPIRED
+}
+
+// ========== MODELS ==========
+
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  password         String
+  firstName        String?
+  lastName         String?
+  phone            String?
+  role             UserRole  @default(TENANT)
+  profileImage     String?
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relations
+  landlordLeases       Lease[]              @relation("LandlordLeases")
+  tenantLeases         Lease[]              @relation("TenantLeases")
+  tenantCustomLeases   CustomLease[]        @relation("TenantCustomLeases")
+  landlordCustomLeases CustomLease[]        @relation("LandlordCustomLeases")
+  landlordPayments     Payment[]            @relation("LandlordPayments")
+  tenantPayments       Payment[]            @relation("TenantPayments")
+  listings             Listing[]            @relation("LandlordListings")
+  maintenanceRequests  MaintenanceRequest[]
+  landlordApplications RequestApplication[] @relation("LandlordApplications")
+  tenantApplications   RequestApplication[] @relation("TenantApplications")
+  MaintenanceMessage   MaintenanceMessage[]
+  notifications        Notification[]       @relation("UserNotifications")
+  tenantInsurances     TenantInsurance[]    @relation("TenantInsurances")
+  verifiedInsurances   TenantInsurance[]    @relation("VerifiedInsurances")
+  createdInvoices      Invoice[]            @relation("InvoiceCreator")
+
+  @@map("users")
+}
+
+model Listing {
+  id         String @id @default(cuid())
+  landlordId String
+
+  // Property Details
+  title           String
+  propertyType    PropertyType
+  propertyOwner   String?
+  bedrooms        Int?
+  bathrooms       Int?
+  totalSquareFeet Int?
+  yearBuilt       Int?
+
+  // Address
+  country       String
+  state         String
+  city          String
+  streetAddress String
+  zipCode       String?
+
+  // Rental Information
+  rentCycle       RentCycle
+  rentAmount      Float
+  securityDeposit Float?
+  petDeposit      Float?
+  availableDate   DateTime
+  status          ListingStatus @default(ACTIVE)
+  description     String?
+  contactName     String?
+  phoneNumber     String?
+  email           String?
+  notes           String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  landlord            User                 @relation("LandlordListings", fields: [landlordId], references: [id], onDelete: Cascade)
+  amenities           ListingAmenity[]
+  images              ListingImage[]
+  leases              Lease[]
+  customLeases        CustomLease[]
+  maintenanceRequests MaintenanceRequest[]
+  applications        RequestApplication[]
+
+  @@index([landlordId])
+  @@index([city, propertyType])
+  @@index([rentCycle])
+  @@index([availableDate])
+}
+
+model ListingAmenity {
+  id        String @id @default(cuid())
+  listingId String
+  name      String
+
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([listingId, name])
+  @@index([listingId])
+}
+
+model ListingImage {
+  id        String   @id @default(cuid())
+  listingId String
+  url       String
+  isPrimary Boolean  @default(false)
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([listingId, url])
+  @@index([listingId])
+}
+
+model Lease {
+  id               String      @id @default(cuid())
+  listingId        String
+  tenantId         String?
+  landlordId       String
+  startDate        DateTime
+  endDate          DateTime
+  rentAmount       Float
+  paymentFrequency RentCycle
+  securityDeposit  Float?
+  paymentMethod    String?
+  leaseStatus      LeaseStatus @default(DRAFT)
+  leaseDocument    String?
+  signedContract   String?
+  contractPdfUrl   String?
+  notes            String?
+
+  propertyCategory PropertyCategory?
+  residentialType  ResidentialType?
+  commercialType   CommercialType?
+  propertyAddress  String?
+  propertyCity     String?
+  propertyState    String?
+  propertyCountry  String?
+  propertyZipCode  String?
+
+  leaseTermType LeaseTermType?
+
+  paymentDay Int?
+
+  acceptsCash        Boolean @default(false)
+  acceptsCheque      Boolean @default(false)
+  acceptsDirectDebit Boolean @default(false)
+  acceptsETransfer   Boolean @default(false)
+  acceptsOther       Boolean @default(false)
+  customPaymentInfo  String?
+
+  rentIncreaseNoticeType       NoticeType?
+  customRentIncreaseNoticeDays Int?
+
+  hasSecurityDeposit      Boolean            @default(false)
+  discloseBankInfo        Boolean            @default(false)
+  depositAmount           Float?
+  depositBankName         String?
+  depositAccountInfo      String?
+  depositReturnNoticeType DepositNoticeType?
+  customDepositNoticeDays Int?
+
+  landlordType        LandlordType?
+  landlordFullName    String?
+  landlordEmail       String?
+  landlordPhone       String?
+  landlordAddress     String?
+  additionalLandlords Json?
+
+  tenantFullName    String?
+  tenantEmail       String?
+  tenantPhone       String?
+  tenantOtherPhone  String?
+  tenantOtherEmail  String?
+  additionalTenants Json?
+
+  unitNumber String?
+
+  allowsOccupants   Boolean @default(false)
+  occupants         Json?
+  numberOfOccupants Int?
+
+  // Standard Lease Form Fields
+  periodicBasis          String?
+  periodicOther          String?
+  fixedEndCondition      String?
+  vacateReason           String?
+  petDeposit             Float?
+  petDepositDueDate      DateTime?
+  securityDepositDueDate DateTime?
+  includedServices       Json?
+  parkingSpaces          Int?
+
+  // Termination tracking
+  terminationDate   DateTime?
+  terminationReason String?
+  terminationNotes  String?
+  terminatedBy      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  listing             Listing              @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  tenant              User?                @relation("TenantLeases", fields: [tenantId], references: [id])
+  landlord            User                 @relation("LandlordLeases", fields: [landlordId], references: [id])
+  maintenanceRequests MaintenanceRequest[]
+  applications        RequestApplication[]
+  payments            Payment[]
+  insurances          TenantInsurance[]
+
+  @@index([tenantId])
+  @@index([landlordId])
+}
+
+model CustomLease {
+  id         String  @id @default(cuid())
+  listingId  String?
+  landlordId String
+  tenantId   String?
+
+  leaseName    String
+  description  String?
+  propertyType String?
+  fileUrl      String
+
+  leaseStatus LeaseStatus @default(DRAFT)
+
+  // Accounting fields
+  startDate        DateTime?
+  endDate          DateTime?
+  rentAmount       Float?
+  paymentFrequency RentCycle?
+  securityDeposit  Float?
+  depositAmount    Float?
+  paymentDay       Int?
+  paymentMethod    String?
+
+  accountingNotes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  listing             Listing?             @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  tenant              User?                @relation("TenantCustomLeases", fields: [tenantId], references: [id])
+  landlord            User                 @relation("LandlordCustomLeases", fields: [landlordId], references: [id])
+  maintenanceRequests MaintenanceRequest[]
+  payments            Payment[]
+  insurances          TenantInsurance[]
+
+  @@index([listingId])
+  @@index([landlordId])
+}
+
+model Payment {
+  id            String  @id @default(cuid())
+  leaseId       String?
+  customLeaseId String?
+  landlordId    String
+  tenantId      String?
+
+  type     PaymentType
+  amount   Float
+  status   PaymentStatus @default(PENDING)
+  dueDate  DateTime?
+  paidDate DateTime?
+
+  paymentMethod String?
+  reference     String?
+  notes         String?
+  proofUrl      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  lease       Lease?       @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  customLease CustomLease? @relation(fields: [customLeaseId], references: [id], onDelete: Cascade)
+  landlord    User         @relation("LandlordPayments", fields: [landlordId], references: [id])
+  tenant      User?        @relation("TenantPayments", fields: [tenantId], references: [id])
+  invoice     Invoice?
+
+  @@index([leaseId])
+  @@index([customLeaseId])
+  @@index([landlordId])
+  @@index([tenantId])
+  @@index([dueDate])
+  @@index([status])
+}
+
+model MaintenanceRequest {
+  id            String              @id @default(cuid())
+  listingId     String
+  userId        String
+  description   String
+  status        MaintenanceStatus   @default(OPEN)
+  priority      MaintenancePriority @default(MEDIUM)
+  category      MaintenanceCategory
+  title         String
+  leaseId       String?
+  customLeaseId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  listing     Listing              @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user        User                 @relation(fields: [userId], references: [id])
+  lease       Lease?               @relation(fields: [leaseId], references: [id])
+  customLease CustomLease?         @relation(fields: [customLeaseId], references: [id])
+  images      MaintenanceImage[]
+  messages    MaintenanceMessage[]
+  invoices    Invoice[]
+
+  @@index([userId, createdAt])
+  @@index([listingId, createdAt])
+  @@index([status, priority, createdAt])
+  @@index([category])
+  @@index([createdAt])
+}
+
+model MaintenanceImage {
+  id                   String             @id @default(cuid())
+  maintenanceRequestId String
+  url                  String
+  createdAt            DateTime           @default(now())
+  maintenanceRequest   MaintenanceRequest @relation(fields: [maintenanceRequestId], references: [id], onDelete: Cascade)
+
+  @@index([maintenanceRequestId])
+}
+
+model MaintenanceMessage {
+  id                   String             @id @default(cuid())
+  maintenanceRequestId String
+  senderId             String
+  body                 String
+  createdAt            DateTime           @default(now())
+  maintenanceRequest   MaintenanceRequest @relation(fields: [maintenanceRequestId], references: [id], onDelete: Cascade)
+  sender               User               @relation(fields: [senderId], references: [id])
+
+  @@index([maintenanceRequestId])
+  @@index([senderId])
+}
+
+model RequestApplication {
+  id             String            @id @default(cuid())
+  publicId       String            @unique
+  listingId      String
+  tenantId       String?
+  landlordId     String
+  fullName       String?
+  email          String?
+  phone          String?
+  dateOfBirth    DateTime?
+  monthlyIncome  Float?
+  currentAddress String?
+  moveInDate     DateTime?
+  occupants      Json?
+  pets           Json?
+  documents      Json?
+  references     Json?
+  message        String?
+  status         ApplicationStatus @default(PENDING)
+  reviewedBy     String?
+  reviewedAt     DateTime?
+  decisionNotes  String?
+  leaseId        String?
+  expirationDate DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  listing        Listing          @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  landlord       User             @relation("LandlordApplications", fields: [landlordId], references: [id])
+  tenant         User?            @relation("TenantApplications", fields: [tenantId], references: [id])
+  lease          Lease?           @relation(fields: [leaseId], references: [id])
+  employmentInfo EmploymentInfo[]
+
+  @@index([listingId])
+  @@index([landlordId])
+  @@index([tenantId])
+  @@index([publicId])
+  @@index([status])
+}
+
+model EmploymentInfo {
+  id            String             @id @default(cuid())
+  applicationId String
+  employerName  String
+  jobTitle      String
+  income        Float?
+  duration      String?
+  address       String?
+  proofDocument String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  application   RequestApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+}
+
+model LeaseInvite {
+  id        String    @id @default(cuid())
+  leaseId   String
+  leaseType LeaseType
+  tenantId  String?
+  token     String    @unique
+  url       String
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  signed    Boolean   @default(false)
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  relatedId String?
+  metadata  Json?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  user      User             @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+  @@index([isRead])
+}
+
+model Invoice {
+  id                   String             @id @default(cuid())
+  maintenanceRequestId String
+  maintenanceRequest   MaintenanceRequest @relation(fields: [maintenanceRequestId], references: [id], onDelete: Cascade)
+  paymentId            String?            @unique
+  payment              Payment?           @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  description          String
+  amount               Float
+  status               InvoiceStatus      @default(PENDING)
+  sharedWithTenant     Boolean            @default(true)
+  sharedWithLandlord   Boolean            @default(true)
+  createdById          String?
+  createdBy            User?              @relation("InvoiceCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdByRole        UserRole?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@index([maintenanceRequestId])
+  @@index([paymentId])
+  @@index([createdById])
+  @@map("invoices")
+}
+
+model TenantInsurance {
+  id              String          @id @default(cuid())
+  tenantId        String
+  leaseId         String?
+  customLeaseId   String?
+  providerName    String
+  policyNumber    String
+  coverageType    String
+  coverageAmount  Float?
+  monthlyCost     Float?
+  startDate       DateTime
+  expiryDate      DateTime
+  documentUrl     String
+  documentKey     String
+  status          InsuranceStatus @default(PENDING)
+  verifiedBy      String?
+  verifiedAt      DateTime?
+  rejectionReason String?
+  notes           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  tenant      User         @relation("TenantInsurances", fields: [tenantId], references: [id], onDelete: Cascade)
+  lease       Lease?       @relation(fields: [leaseId], references: [id], onDelete: SetNull)
+  customLease CustomLease? @relation(fields: [customLeaseId], references: [id], onDelete: SetNull)
+  verifier    User?        @relation("VerifiedInsurances", fields: [verifiedBy], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([leaseId])
+  @@index([customLeaseId])
+  @@index([status])
+  @@index([expiryDate])
+  @@index([verifiedBy])
+}

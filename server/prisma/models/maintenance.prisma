@@ -1,0 +1,50 @@
+model MaintenanceRequest {
+  id            String               @id @default(cuid())
+  listingId     String
+  userId        String
+  description   String
+  status        MaintenanceStatus    @default(OPEN)
+  priority      MaintenancePriority  @default(MEDIUM)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  leaseId       String?
+  customLeaseId String?
+  category      MaintenanceCategory
+  title         String
+  images        MaintenanceImage[]
+  messages      MaintenanceMessage[]
+  invoices      Invoice[]
+  lease         Lease?               @relation(fields: [leaseId], references: [id])
+  customLease   CustomLease?         @relation(fields: [customLeaseId], references: [id])
+  listing       Listing              @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user          User                 @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([listingId, createdAt])
+  @@index([status, priority, createdAt])
+  @@index([category])
+  @@index([createdAt])
+}
+
+model MaintenanceImage {
+  id                   String             @id @default(cuid())
+  maintenanceRequestId String
+  url                  String
+  createdAt            DateTime           @default(now())
+  maintenanceRequest   MaintenanceRequest @relation(fields: [maintenanceRequestId], references: [id], onDelete: Cascade)
+
+  @@index([maintenanceRequestId])
+}
+
+model MaintenanceMessage {
+  id                   String             @id @default(cuid())
+  maintenanceRequestId String
+  senderId             String
+  body                 String
+  createdAt            DateTime           @default(now())
+  maintenanceRequest   MaintenanceRequest @relation(fields: [maintenanceRequestId], references: [id], onDelete: Cascade)
+  sender               User               @relation(fields: [senderId], references: [id])
+
+  @@index([maintenanceRequestId])
+  @@index([senderId])
+}

@@ -1,0 +1,11 @@
+model LeaseInvite {
+  id        String    @id @default(cuid())
+  leaseId   String
+  leaseType LeaseType // enum: STANDARD | CUSTOM
+  tenantId  String?
+  token     String    @unique
+  url       String
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  signed    Boolean   @default(false)
+}

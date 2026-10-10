@@ -1,0 +1,61 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: rental-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      target: prod
+    container_name: rental-backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - internal
+
+  nginx:
+    image: nginx:stable
+    container_name: rental-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./server/deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+    networks:
+      - internal
+
+volumes:
+  redis-data:
+
+networks:
+  internal:
+    driver: bridge
