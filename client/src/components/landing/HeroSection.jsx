@@ -45,10 +45,10 @@ const HeroSection = () => {
             <div className="max-w-7xl mx-auto relative z-[3]">
                 <div className="text-center">
                     <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-relaxed bg-gradient-to-r from-primary-foreground via-primary-foreground to-primary-foreground/70 bg-clip-text text-transparent">
-                        Streamline Your Rental Management
+                        Simplify Renting and Property Management
                     </h1>
                     <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl mb-12 sm:mb-16 md:mb-20 max-w-3xl mx-auto leading-relaxed bg-gradient-to-r from-primary-foreground/90 via-primary-foreground/70 to-primary-foreground/50 bg-clip-text text-transparent">
-                        Manage properties, leases, and payments all in one place.
+                        Landlords can streamline their properties, while tenants can discover homes, apply to rent, and connect directly with landlords.
                     </p>
                     <div className="flex flex-row gap-3 sm:gap-4 md:gap-8 justify-center items-center flex-wrap">
                         {/* <Button

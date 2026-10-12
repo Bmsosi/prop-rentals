@@ -12,6 +12,7 @@ export const employmentInfoSchema = z.object({
 export const createApplicationSchema = z.object({
   listingId: z.string().trim().min(1, "Listing ID is required"),
   tenantId: z.string().trim().optional(),
+  tenantEmail: z.string().email("Invalid tenant email").optional(),
   fullName: z.string().trim().min(2, "Full name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   phone: z.string().trim().optional(),

@@ -11,6 +11,7 @@ import {
   bulkDeleteApplications,
   requestDeposit,
   submitDepositReceipt,
+  sendApplicationRequirements,
 } from "../services/requestApplicationService.js";
 import { createTenantInterest } from "../services/requestApplicationService.js";
 import {
@@ -130,9 +131,13 @@ export async function submitPublicApplicationController(req, res) {
     // An application is considered submitted if:
     // 1. Status is not PENDING (e.g., NEW, APPROVED, REJECTED, etc.)
     // 2. OR it has real data (not placeholder data)
-    const isSubmitted = 
-      !["PENDING", "PRE_APPROVED"].includes(application.status) ||
-      (application.fullName && application.fullName !== "N/A" && application.email && application.email !== "na@example.com");
+    const hasRealSubmittedData =
+      application.fullName && application.fullName !== "N/A" &&
+      application.email && application.email !== "na@example.com";
+    const isRequirementsStage = application.status === "PENDING" && Boolean(application.requirementsSentAt);
+    const isSubmitted =
+      !(["PRE_APPROVED"].includes(application.status) || isRequirementsStage) ||
+      (hasRealSubmittedData && !isRequirementsStage && application.status !== "PRE_APPROVED");
 
     if (isSubmitted) {
       return res
@@ -294,6 +299,15 @@ export async function submitDepositReceiptController(req, res) {
   try {
     const result = await submitDepositReceipt(req.params.id, req.user.id, req.body.receiptUrl);
     return SuccessResponse(res, 200, "Deposit receipt submitted", result);
+  } catch (error) {
+    return HandleError(res, error);
+  }
+}
+
+export async function sendApplicationRequirementsController(req, res) {
+  try {
+    const result = await sendApplicationRequirements(req.params.id, req.user.id);
+    return SuccessResponse(res, 200, "Application requirements link sent to tenant", result);
   } catch (error) {
     return HandleError(res, error);
   }

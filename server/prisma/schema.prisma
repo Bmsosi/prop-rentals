@@ -570,6 +570,7 @@ model RequestApplication {
   depositReceiptUrl String?
   depositSubmittedAt DateTime?
   depositApprovedAt DateTime?
+  requirementsSentAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -107,8 +107,8 @@ const ContactSection = ({ sectionRef }) => {
                     {/* Image - Right Side */}
                     <div className="flex justify-center items-center">
                         <img
-                            src="/images/dashboard-frame-mob.png"
-                            alt="Dashboard Preview"
+                            src="/images/hero-banner.png"
+                            alt="MucoProps property management preview"
                             className="w-full h-auto max-w-2xl"
                             style={{
                                 mixBlendMode: 'multiply',

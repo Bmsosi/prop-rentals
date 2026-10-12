@@ -19,6 +19,18 @@ export async function uploadImageToSupabase(req, res) {
   }
 }
 
+export async function uploadApplicationDocumentToSupabase(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "A document file is required" });
+    }
+    const result = await uploadImage(req.file, req.user?.id || "public", "applications");
+    return SuccessResponse(res, 201, "Application document uploaded successfully", result);
+  } catch (error) {
+    return HandleError(res, error);
+  }
+}
+
 export async function getawsS3PresignedUrl(req, res) {
   try {
     const { fileName, fileType, category } = req.query;

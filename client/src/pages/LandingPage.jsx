@@ -5,7 +5,6 @@ import LandingHeader from "@/components/landing/LandingHeader";
 import HeroSection from "@/components/landing/HeroSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
-import DashboardImageSection from "@/components/landing/DashboardImageSection";
 import PricingSection from "@/components/landing/PricingSection";
 import ContactSection from "@/components/landing/ContactSection";
 import LandingImageShowcase from "@/components/landing/LandingImageShowcase";
@@ -95,18 +94,13 @@ const LandingPage = () => {
                         <FeaturesSection
                             sectionRef={featuresRef}
                         />
-                        <DashboardImageSection
-                            sectionRef={dashboardRef}
-                        />
+                        <LandingImageShowcase sectionRef={dashboardRef} />
                         <PricingSection
                             sectionRef={pricingRef}
                         />
                         <ContactSection
                             sectionRef={contactRef}
                         />
-                        <LandingImageShowcase />
-                        {/* Team section temporarily commented out in favor of the landing-page image showcase. */}
-                        {/* <TeamSection sectionRef={teamRef} /> */}
                         <LandingFooter />
                     </div>
                 </div>

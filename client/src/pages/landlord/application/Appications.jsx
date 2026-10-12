@@ -189,6 +189,16 @@ const Applications = () => {
             toast.error(error.response?.data?.message || "Failed to request deposit");
         }
     };
+
+    const handleSendRequirements = async (app) => {
+        try {
+            await api.post(`${API_ENDPOINTS.APPLICATIONS.BASE}/${app.id}/requirements-link`);
+            toast.success("Requirements link sent to the tenant");
+            refetchApplications();
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to send requirements link");
+        }
+    };
     const handleReject = (id) => updateStatusMutation.mutateAsync({ id, status: "REJECTED" });
 
     const handleSendLease = async (app) => {
@@ -401,6 +411,7 @@ const Applications = () => {
                                 app={app}
                                 onApprove={handleApprove}
                                 onRequestDeposit={handleRequestDeposit}
+                                onSendRequirements={handleSendRequirements}
                                 onSendLease={handleSendLease}
                                 onReject={handleReject}
                                 onDelete={handleDelete}

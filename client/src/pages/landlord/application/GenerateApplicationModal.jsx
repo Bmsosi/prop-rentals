@@ -36,6 +36,7 @@ const GenerateApplicationDialog = ({
     onGenerated,
 }) => {
     const [selectedListing, setSelectedListing] = useState("");
+    const [tenantEmail, setTenantEmail] = useState("");
     const [requirements, setRequirements] = useState({
         photoId: true,
         proofOfIncome: true,
@@ -50,7 +51,7 @@ const GenerateApplicationDialog = ({
     const queryClient = useQueryClient();
 
     const generateApplicationMutation = useMutation({
-        mutationFn: async ({ listingId, requirements }) => {
+        mutationFn: async ({ listingId, requirements, tenantEmail }) => {
             let expirationDateToSend = null;
             if (expirationDate) {
                 // Set expiration to end of day (23:59:59.999) to avoid timezone issues
@@ -67,6 +68,7 @@ const GenerateApplicationDialog = ({
 
             const res = await api.post(API_ENDPOINTS.APPLICATIONS.BASE, {
                 listingId,
+                ...(tenantEmail ? { tenantEmail: tenantEmail.trim() } : {}),
                 fullName: "N/A",
                 email: "na@example.com",
                 phone: "N/A",
@@ -97,6 +99,7 @@ const GenerateApplicationDialog = ({
         generateApplicationMutation.mutate({
             listingId: selectedListing,
             requirements,
+            tenantEmail,
         });
     };
 
@@ -104,6 +107,7 @@ const GenerateApplicationDialog = ({
 
     const resetForm = () => {
         setSelectedListing("");
+        setTenantEmail("");
         setRequirements({
             photoId: true,
             proofOfIncome: true,
@@ -171,6 +175,16 @@ const GenerateApplicationDialog = ({
                                     )}
                                 </SelectContent>
                             </Select>
+                        </div>
+
+                        <div>
+                            <label className="text-sm text-gray-600">Tenant email (optional)</label>
+                            <Input
+                                type="email"
+                                value={tenantEmail}
+                                onChange={(event) => setTenantEmail(event.target.value)}
+                                placeholder="Send the link to a registered tenant"
+                            />
                         </div>
 
                         {/* Expiration time for the generated link */}

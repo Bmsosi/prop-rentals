@@ -10,6 +10,7 @@ import {
   createTenantInterestController,
   requestDepositController,
   submitDepositReceiptController,
+  sendApplicationRequirementsController,
 } from "../controllers/requestApplicationController.js";
 import { authenticate } from "../middleware/AuthMiddleware.js";
 import { authorize } from "../middleware/authorizeMiddlewear.js";
@@ -240,6 +241,13 @@ router.post(
   authenticate,
   authorize(["TENANT"]),
   submitDepositReceiptController
+);
+
+router.post(
+  "/:id/requirements-link",
+  authenticate,
+  authorize(["ADMIN"]),
+  sendApplicationRequirementsController
 );
 
 router.delete(

@@ -4,6 +4,7 @@ import {
   getawsS3DownloadUrl,
   getProfilePhotoUploadUrl,
   uploadImageToSupabase,
+  uploadApplicationDocumentToSupabase,
 } from "../controllers/uploadController.js";
 import { getApplicationProofUploadUrl } from "../controllers/applicationFileController.js";
 import { authenticate } from "../middleware/AuthMiddleware.js";
@@ -15,6 +16,13 @@ const imageUpload = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, callback) =>
     callback(null, file.mimetype.startsWith("image/")),
+});
+
+const documentUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, callback) =>
+    callback(null, file.mimetype.startsWith("image/") || file.mimetype === "application/pdf"),
 });
 
 const router = express.Router();
@@ -68,6 +76,7 @@ router.get("/s3-url", authenticate, getawsS3PresignedUrl);
 router.get("/s3-download-url", authenticate, getawsS3DownloadUrl);
 router.get("/profile-photo-upload-url", authenticate, getProfilePhotoUploadUrl);
 router.post("/supabase-image", authenticate, imageUpload.single("file"), uploadImageToSupabase);
+router.post("/supabase-document", documentUpload.single("file"), uploadApplicationDocumentToSupabase);
 router.get("/application-proof-url", getApplicationProofUploadUrl);
 router.post("/:publicId/submit", submitPublicApplicationController);
 

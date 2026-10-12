@@ -41,6 +41,7 @@ const ApplyForm = () => {
   const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [depositReceiptFile, setDepositReceiptFile] = useState(null);
+  const [verificationConsents, setVerificationConsents] = useState({ background: false, credit: false });
   const [redirectAfterSubmit, setRedirectAfterSubmit] = useState(false);
   const documentInputRef = useRef(null);
   const employmentProofInputRefs = useRef({});
@@ -205,6 +206,26 @@ const ApplyForm = () => {
     onError: (error) => toast.error(error.response?.data?.message || error.message || "Unable to submit receipt"),
   });
 
+  const verificationMutation = useMutation({
+    mutationFn: async () => {
+      if (form.documents.length < 3) throw new Error("Upload Photo ID, Proof of Income, and Landlord Reference");
+      if (!verificationConsents.background || !verificationConsents.credit) {
+        throw new Error("Both consent boxes must be accepted");
+      }
+      const documents = await Promise.all(form.documents.map((file) => uploadFileToS3(file)));
+      const response = await api.post(`${API_ENDPOINTS.UPLOADS.BASE}/${publicId}/submit`, {
+        documents,
+        references: { backgroundCheckConsent: true, creditCheckConsent: true },
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Required documents and consents submitted.");
+      navigate("/apply/thank-you");
+    },
+    onError: (error) => toast.error(error.response?.data?.message || error.message || "Unable to submit documents"),
+  });
+
   // Parse requirements from applicationMeta.message (stored as JSON string)
   const requirements = React.useMemo(() => {
     if (!applicationMeta?.message) return null;
@@ -221,10 +242,18 @@ const ApplyForm = () => {
     if (!applicationMeta?.expirationDate) return false;
     return new Date() > new Date(applicationMeta.expirationDate);
   }, [applicationMeta]);
+  const isRequirementsOnly = applicationMeta?.status === "PENDING" && Boolean(applicationMeta?.requirementsSentAt);
+
+  useEffect(() => {
+    if (isRequirementsOnly) setStep(4);
+  }, [isRequirementsOnly]);
 
   // Check if application has already been submitted
   const isAlreadySubmitted = React.useMemo(() => {
     if (!applicationMeta) return false;
+    // Pre-approval is an invitation to complete the full application form.
+    if (applicationMeta.status === "PRE_APPROVED") return false;
+    if (isRequirementsOnly) return false;
     // Check if status is not PENDING (meaning it's been submitted)
     if (applicationMeta.status && !["PENDING", "PRE_APPROVED", "DEPOSIT_REQUESTED"].includes(applicationMeta.status)) {
       return true;
@@ -350,6 +379,52 @@ const ApplyForm = () => {
             onClick={() => depositReceiptMutation.mutate()}
           >
             {depositReceiptMutation.isPending ? "Submitting..." : "Submit deposit receipt"}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isRequirementsOnly) {
+    return (
+      <div className="min-h-screen flex items-start justify-center py-8 px-4 bg-gray-50">
+        <div className="w-full max-w-3xl bg-stone-50 rounded-lg shadow p-6 md:p-8 border border-stone-200 space-y-6">
+          <div>
+            <h1 className="text-2xl font-semibold">Complete your application</h1>
+            <p className="text-gray-600 mt-2">Your landlord has pre-approved you. Upload the requested documents and accept both consent forms below.</p>
+          </div>
+          <div className="rounded-lg border bg-blue-50 p-4">
+            <h2 className="font-semibold text-blue-900 mb-2">Application Requirements</h2>
+            <ul className="list-disc pl-5 space-y-1 text-blue-900">
+              <li>Photo ID</li>
+              <li>Proof of Income</li>
+              <li>Landlord Reference</li>
+            </ul>
+          </div>
+          <div>
+            <Label>Upload required documents (Photo ID, Proof of Income, and Landlord Reference)</Label>
+            <Input
+              type="file"
+              multiple
+              accept="image/*,application/pdf"
+              className="mt-2 bg-white"
+              onChange={(event) => handleAddDocument(Array.from(event.target.files || []))}
+            />
+            <p className="text-sm text-gray-600 mt-2">{form.documents.length} of 3 required documents selected</p>
+          </div>
+          <div className="space-y-4 rounded-lg border bg-white p-4">
+            <h2 className="font-semibold">Required consents</h2>
+            <label className="flex items-start gap-3 text-sm">
+              <input type="checkbox" checked={verificationConsents.background} onChange={(event) => setVerificationConsents((current) => ({ ...current, background: event.target.checked }))} className="mt-1" />
+              <span>I have read and agree to the <button type="button" className="text-primary underline" onClick={() => window.alert("I authorize MucoProps and the landlord to conduct a background check for this rental application.")}>background check conditions</button>.</span>
+            </label>
+            <label className="flex items-start gap-3 text-sm">
+              <input type="checkbox" checked={verificationConsents.credit} onChange={(event) => setVerificationConsents((current) => ({ ...current, credit: event.target.checked }))} className="mt-1" />
+              <span>I have read and agree to the <button type="button" className="text-primary underline" onClick={() => window.alert("I authorize MucoProps and the landlord to obtain and review my credit information for this rental application.")}>credit check conditions</button>.</span>
+            </label>
+          </div>
+          <Button className="w-full" disabled={verificationMutation.isPending} onClick={() => verificationMutation.mutate()}>
+            {verificationMutation.isPending ? "Submitting..." : "Submit documents and consents"}
           </Button>
         </div>
       </div>
@@ -618,23 +693,13 @@ const ApplyForm = () => {
   };
 
   async function uploadFileToS3(file) {
-    const endpoint = "/api/v1/upload/application-proof-url";
-    const { data } = await api.get(endpoint, {
-      params: {
-        fileName: file.name,
-        fileType: file.type,
-      },
+    const uploadData = new FormData();
+    uploadData.append("file", file);
+    uploadData.append("category", "applications");
+    const { data } = await api.post("/api/v1/upload/supabase-document", uploadData, {
+      headers: { "Content-Type": "multipart/form-data" },
     });
-
-    const { uploadURL, fileUrl } = data.data;
-
-    await fetch(uploadURL, {
-      method: "PUT",
-      headers: { "Content-Type": file.type },
-      body: file,
-    });
-
-    return fileUrl;
+    return data?.data?.fileUrl || data?.fileUrl;
   }
 
   const handleSubmit = async () => {
@@ -1231,9 +1296,14 @@ const ApplyForm = () => {
           {step === 4 && (
             <div>
               <div className="space-y-3 md:space-y-4">
+                {applicationMeta.status === "PRE_APPROVED" && (
+                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                    Submit your applicant and rental details first. Your landlord will send a separate requirements link for documents and consents after reviewing this form.
+                  </div>
+                )}
                 <div className="space-y-1 md:space-y-2">
                   <Label className="mb-1 text-xs md:text-sm">Upload documents (ID, payslips etc.)</Label>
-                  {form.documents.length === 0 && (
+                  {applicationMeta.status !== "PRE_APPROVED" && form.documents.length === 0 && (
                     <p className="text-red-500 text-sm">At least one document is required</p>
                   )}
                   {form.documents.length > 0 && form.documents.length < 3 && (
@@ -1259,7 +1329,7 @@ const ApplyForm = () => {
                       }
                     }}
                   />
-                  {form.documents.length < 3 && (
+                  {applicationMeta.status !== "PRE_APPROVED" && form.documents.length < 3 && (
                     <label
                       htmlFor="document-input"
                       className={`block border-2 border-dashed rounded-lg p-4 md:p-6 cursor-pointer hover:bg-gray-50 text-center mt-2 ${form.documents.length === 0 ? "border-red-500" : ""}`}
@@ -1375,7 +1445,9 @@ const ApplyForm = () => {
                   }
                 } else if (step === 4) {
                   // Step 4: Validate documents
-                  if (!form.documents || form.documents.length === 0) {
+                  if (applicationMeta.status === "PRE_APPROVED") {
+                    canProceed = true;
+                  } else if (!form.documents || form.documents.length === 0) {
                     toast.error("Please upload at least one document.");
                     canProceed = false;
                   } else {

@@ -23,7 +23,7 @@ const images = [
   { src: "/images/landpage/Townhouse_exterior.jpg", alt: "Townhouse exterior" },
 ];
 
-const LandingImageShowcase = () => {
+const LandingImageShowcase = ({ sectionRef }) => {
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
@@ -48,7 +48,7 @@ const LandingImageShowcase = () => {
       className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden"
     >
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="text-center mb-8 sm:mb-12">
+        <div className="text-center mb-8 sm:mb-12" ref={sectionRef}>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary mb-4">
             Find a place you will love
           </h2>

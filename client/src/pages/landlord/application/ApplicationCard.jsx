@@ -40,6 +40,7 @@ const ApplicationCard = ({
     app, 
     onApprove, 
     onRequestDeposit,
+    onSendRequirements,
     onReject, 
     onSendLease, 
     onDelete, 
@@ -257,6 +258,18 @@ const ApplicationCard = ({
                                     className="text-xs px-3 py-1.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
                                 >
                                     Ask for deposit
+                                </Button>
+                            )}
+
+                            {app.status === "PENDING" && !app.requirementsSentAt && app.tenantId && (
+                                <Button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onSendRequirements?.(app);
+                                    }}
+                                    className="text-xs px-3 py-1.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
+                                >
+                                    Send requirements link
                                 </Button>
                             )}
 

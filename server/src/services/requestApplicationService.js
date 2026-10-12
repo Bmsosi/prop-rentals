@@ -43,6 +43,21 @@ export async function createTenantInterest(tenant, listingId, message) {
     metadata: { listingId, applicationId: application.id },
   });
 
+  if (application.tenantId) {
+    await createNotification({
+      userId: application.tenantId,
+      type: "APPLICATION_STATUS",
+      title: "Application link ready",
+      body: `Your application link for ${application.listing?.title || "the property"} is ready.`,
+      relatedId: application.id,
+      metadata: {
+        applicationId: application.id,
+        publicId: application.publicId,
+        action: "COMPLETE_APPLICATION",
+      },
+    });
+  }
+
   return application;
 }
 
@@ -65,6 +80,19 @@ export async function createApplication(landlordId, data) {
     throw err;
   }
 
+  let tenantId = data.tenantId || null;
+  if (!tenantId && data.tenantEmail) {
+    const tenant = await prisma.user.findFirst({
+      where: { email: data.tenantEmail.toLowerCase(), role: "TENANT" },
+      select: { id: true },
+    });
+    if (!tenant) {
+      const error = new Error("No tenant account was found for that email");
+      error.status = 404;
+      throw error;
+    }
+    tenantId = tenant.id;
+  }
   const publicId = generatePublicId();
   const employmentInfoData = data.employmentInfo
     ? data.employmentInfo.map((info) => ({
@@ -81,7 +109,7 @@ export async function createApplication(landlordId, data) {
       publicId,
       listingId: data.listingId,
       landlordId,
-      tenantId: data.tenantId || null,
+      tenantId,
       fullName: data.fullName,
       email: data.email,
       phone: data.phone || null,
@@ -501,6 +529,46 @@ export async function submitDepositReceipt(applicationId, tenantId, receiptUrl) 
     body: "A tenant has submitted a deposit receipt for your review.",
     relatedId: application.id,
     metadata: { applicationId: application.id, action: "REVIEW_DEPOSIT" },
+  });
+  return updated;
+}
+
+export async function sendApplicationRequirements(applicationId, landlordId) {
+  const application = await prisma.RequestApplication.findUnique({
+    where: { id: applicationId },
+    include: { listing: { select: { title: true } } },
+  });
+  if (!application || application.landlordId !== landlordId) {
+    const error = new Error("Application not found");
+    error.status = 404;
+    throw error;
+  }
+  if (application.status !== "PENDING" || !application.tenantId) {
+    const error = new Error("The tenant must submit the pre-approval form before requirements can be sent");
+    error.status = 400;
+    throw error;
+  }
+
+  const updated = await prisma.RequestApplication.update({
+    where: { id: applicationId },
+    data: {
+      requirementsSentAt: new Date(),
+      message: JSON.stringify({
+        photoId: true,
+        proofOfIncome: true,
+        landlordRef: true,
+        ConsentForBackgroundCheck: true,
+        ConsentForCreditCheck: true,
+      }),
+    },
+  });
+  await createNotification({
+    userId: application.tenantId,
+    type: "APPLICATION_STATUS",
+    title: "Complete your application requirements",
+    body: `Upload the required documents and consents for ${application.listing.title}.`,
+    relatedId: application.id,
+    metadata: { applicationId: application.id, publicId: application.publicId, action: "COMPLETE_REQUIREMENTS" },
   });
   return updated;
 }
