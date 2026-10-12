@@ -11,7 +11,7 @@ const Documentation = () => {
             {/* Simple header with close button */}
             <div className="sticky top-0 bg-background/95 backdrop-blur-sm border-b border-gray-200 z-50">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-                    <h1 className="text-xl font-bold text-primary">PropEase - Documentation</h1>
+                    <h1 className="text-xl font-bold text-primary">MucoProps - Documentation</h1>
                     <button
                         onClick={() => {
                             // Try to close if window was opened by JavaScript
@@ -38,7 +38,7 @@ const Documentation = () => {
                             Documentation
                         </h1>
                         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                            Everything you need to know about PropEase - Your comprehensive rental management solution
+                                    Everything you need to know about MucoProps - Your comprehensive rental management solution
                         </p>
                     </div>
 
@@ -52,7 +52,7 @@ const Documentation = () => {
                             <div>
                                 <h3 className="font-semibold text-lg mb-2">For Landlords</h3>
                                 <ol className="list-decimal list-inside space-y-2 ml-4">
-                                    <li>Sign up for a PropEase account</li>
+                                    <li>Sign up for a MucoProps account</li>
                                     <li>Create your first property listing</li>
                                     <li>Generate application links for prospective tenants</li>
                                     <li>Review applications and approve tenants</li>
@@ -222,7 +222,7 @@ const Documentation = () => {
                     <div className="text-center bg-white rounded-2xl p-8 shadow-lg">
                         <h2 className="text-2xl font-bold text-primary mb-4">Ready to Get Started?</h2>
                         <p className="text-gray-600 mb-6">
-                            Join PropEase today and streamline your rental management process
+                            Join MucoProps today and streamline your rental management process
                         </p>
                         <Button
                             onClick={() => navigate("/signup")}

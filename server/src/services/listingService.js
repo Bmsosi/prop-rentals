@@ -92,7 +92,21 @@ async function createListings(landlordId, data) {
 //   return listings;
 // }
 
-async function getAllListings(userId, userRole) {
+async function getAllListings(userId, userRole, options = {}) {
+  if (userRole === "TENANT" && options.browse) {
+    return prisma.listing.findMany({
+      where: { status: "ACTIVE" },
+      include: {
+        amenities: true,
+        images: true,
+        landlord: {
+          select: { id: true, firstName: true, lastName: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
   // TENANT: return the listing(s) from active lease (standard or custom)
   if (userRole === "TENANT") {
     const activeLease = await prisma.lease.findFirst({

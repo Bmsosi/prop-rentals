@@ -657,7 +657,7 @@ export default function CreateLeaseModal({ open, onClose, tenantId, landlordId, 
                             <div className="w-12 h-12 bg-primary/10 rounded-full mx-auto mb-3 flex items-center justify-center">
                                 <FileText className="w-6 h-6 text-primary" />
                             </div>
-                            <p className="text-lg font-semibold">Create with PropEase</p>
+                            <p className="text-lg font-semibold">Create with MucoProps</p>
                             <p className="text-sm text-muted-foreground mt-1">
                                 * Recommended for beginners
                             </p>

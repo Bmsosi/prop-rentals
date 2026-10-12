@@ -1,12 +1,23 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, Search, X } from "lucide-react";
 
 const LandingHeader = () => {
     const navigate = useNavigate();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const handleSearchSubmit = (event) => {
+        event.preventDefault();
+        const query = searchTerm.trim();
+        if (!query) return;
+
+        setSearchOpen(false);
+        setMobileMenuOpen(false);
+        navigate(`/tenant/properties?search=${encodeURIComponent(query)}`);
+    };
 
     return (
         <header
@@ -16,7 +27,8 @@ const LandingHeader = () => {
                 <div className="flex justify-between items-center h-24">
                     {/* Logo */}
                     <div className="flex items-center">
-                        <svg width="146" height="32" viewBox="0 0 146 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-8 w-auto">
+                        <img src="/mucoprops-logo.svg" alt="MucoProps" className="h-8 w-auto" />
+                        <svg width="146" height="32" viewBox="0 0 146 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="hidden">
                             <path d="M8.93487 25.3281V15.7329C8.93487 15.5683 9.31172 15.0193 9.43797 14.8587L18.0193 5.99608C18.4574 5.6288 19.0944 5.58098 19.6071 5.78948C22.0824 7.35234 24.6247 8.83677 27.0656 10.4494C28.3606 11.3044 29.4548 11.687 29.5906 13.4316C29.8948 17.29 29.3668 21.552 29.5753 25.4524C29.4969 26.6843 28.4333 27.57 27.2282 27.0899C24.5003 25.1827 21.5238 23.5701 18.8189 21.6381C18.3484 21.3014 17.7745 20.8576 17.6061 20.2799C17.3766 19.4956 17.3823 16.1365 17.6061 15.3158C17.916 14.1777 19.7505 13.9691 20.5023 14.8127C21.2541 15.6563 20.6974 17.9155 20.8868 18.9733L26.1914 22.3898V13.8505L19.4617 9.60577L19.1881 9.54838L12.2787 16.785L12.2289 28.7637C12.0223 29.9229 10.7789 30.5944 9.73065 29.9937L0.996241 23.9469C-0.264375 23.0402 0.116296 21.7069 0.125861 20.4176C0.148816 17.2135 -0.162991 13.3207 0.118209 10.2179C0.200465 9.30161 0.7533 8.76217 1.3597 8.15386C3.34722 6.15868 5.54517 4.21706 7.6073 2.2831C8.85262 1.11621 9.8722 -0.745061 11.7736 0.314698C12.8659 0.923008 15.2513 2.3424 16.1389 3.10948C17.4378 4.23045 16.5081 6.38632 14.8611 6.1319C14.6488 6.09938 14.423 5.94443 14.2318 5.84496C13.1624 5.29212 12.0893 4.41409 11.041 3.79431L10.8612 3.78474L4.75513 9.53307L3.44478 10.8855V21.4984L3.70877 21.7853L8.93296 25.3281H8.93487Z" fill="#FEFFF8" />
                             <path d="M36.1057 19.0841V25.3738C36.1057 26.0376 34.9445 26.7128 34.3152 26.7128C33.6858 26.7128 32.5247 26.0376 32.5247 25.3738V15.4113H40.8325C41.3471 15.4113 42.5599 14.6882 42.9463 14.3114C46.0261 11.3176 42.8296 6.09919 38.6767 7.65248C37.3893 8.13454 36.1057 9.74522 36.1057 11.1397V13.6648H32.5247V10.497C32.5247 8.18427 34.8833 5.43158 36.8976 4.49616C43.8932 1.24419 50.7931 9.28038 46.4603 15.7135C43.9754 19.4036 40.119 19.1836 36.1038 19.0822L36.1057 19.0841Z" fill="#FEFFF8" />
                             <path d="M101.191 5.12769V8.61686H93.1126V14.0343H97.2885C97.5888 14.0343 98.1761 14.3556 98.3942 14.5814C99.2282 15.4479 99.0121 16.9821 97.9179 17.5081C97.8299 17.5502 97.432 17.7071 97.3822 17.7071H93.1145V23.1245H99.5859C99.8614 23.1245 100.437 23.4248 100.646 23.6256C101.277 24.2378 101.375 25.1694 100.904 25.9097C100.747 26.1584 100.145 26.7055 99.8633 26.7055H89.5354V5.12769H101.195H101.191Z" fill="#FEFFF8" />
@@ -30,32 +42,23 @@ const LandingHeader = () => {
                     </div>
 
                     {/* Desktop Navigation */}
-                    <nav className="hidden md:flex items-center space-x-12">
-                        <a href="#features" className="text-xl text-background/80 hover:text-background transition-colors">
-                            Features
-                        </a>
-                        <a href="#pricing" className="text-xl text-background/80 hover:text-background transition-colors">
-                            Pricing
-                        </a>
-                        <a href="#contact" className="text-xl text-background/80 hover:text-background transition-colors">
-                            Contact Us
-                        </a>
-                        <a 
-                            href="/documentation" 
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xl text-background/80 hover:text-background transition-colors"
+                    <nav className="hidden md:flex items-center gap-6 lg:gap-8">
+                        <a href="#home" className="text-lg text-background/80 hover:text-background transition-colors">Home</a>
+                        <a href="#about" className="text-lg text-background/80 hover:text-background transition-colors">About</a>
+                        <a href="/signup" className="text-lg text-background/80 hover:text-background transition-colors">Landlord</a>
+                        <a href="/signup" className="text-lg text-background/80 hover:text-background transition-colors">Tenant</a>
+                        <a href="#features" className="text-lg text-background/80 hover:text-background transition-colors">Features</a>
+                        <a href="/login" className="text-lg text-background/80 hover:text-background transition-colors">Login</a>
+                        <a href="#contact" className="text-lg text-background/80 hover:text-background transition-colors">Contact Us</a>
+                        <button
+                            type="button"
+                            onClick={() => setSearchOpen((open) => !open)}
+                            className="text-background/80 hover:text-background transition-colors"
+                            aria-label="Search properties"
+                            title="Search properties"
                         >
-                            Documentation
-                        </a>
-                        <a 
-                            href="https://www.figma.com/design/CXkcqLPtSwft5qe09M41PB/Racoon-Tenancy-App-Wireframes?node-id=86-1687&p=f&t=dOqBec3rr28PU3Fj-0" 
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xl text-background/80 hover:text-background transition-colors"
-                        >
-                            Design Files
-                        </a>
+                            <Search className="w-5 h-5" />
+                        </button>
                     </nav>
 
                     {/* Mobile menu button */}
@@ -66,6 +69,40 @@ const LandingHeader = () => {
                         {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
                     </button>
                 </div>
+
+                {searchOpen && (
+                    <form
+                        onSubmit={handleSearchSubmit}
+                        className="flex items-center gap-3 border-t border-white/20 py-3"
+                    >
+                        <div className="flex flex-1 items-center gap-3 rounded-xl bg-white px-4 py-2 shadow-lg">
+                            <Search className="h-5 w-5 shrink-0 text-primary" />
+                            <input
+                                autoFocus
+                                type="search"
+                                value={searchTerm}
+                                onChange={(event) => setSearchTerm(event.target.value)}
+                                placeholder="Search by city, apartment, condo, house..."
+                                aria-label="Search properties"
+                                className="w-full bg-transparent text-primary outline-none placeholder:text-gray-400"
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            className="rounded-xl bg-primary px-5 py-2 font-medium text-white transition-colors hover:bg-primary/90"
+                        >
+                            Search
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setSearchOpen(false)}
+                            className="rounded-xl p-2 text-background/80 hover:bg-white/10 hover:text-background"
+                            aria-label="Close search"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
+                    </form>
+                )}
 
                 {/* Mobile Navigation Dropdown */}
                 {mobileMenuOpen && createPortal(
@@ -90,6 +127,34 @@ const LandingHeader = () => {
                         >
                             <nav className="flex flex-col p-4 space-y-3">
                                 <a
+                                    href="#home"
+                                    className="text-primary-foreground hover:text-primary-foreground/80 hover:bg-white/10 transition-colors py-2 px-3 rounded-lg"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    Home
+                                </a>
+                                <a
+                                    href="#about"
+                                    className="text-primary-foreground hover:text-primary-foreground/80 hover:bg-white/10 transition-colors py-2 px-3 rounded-lg"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    About
+                                </a>
+                                <a
+                                    href="/signup"
+                                    className="text-primary-foreground hover:text-primary-foreground/80 hover:bg-white/10 transition-colors py-2 px-3 rounded-lg"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    Landlord
+                                </a>
+                                <a
+                                    href="/signup"
+                                    className="text-primary-foreground hover:text-primary-foreground/80 hover:bg-white/10 transition-colors py-2 px-3 rounded-lg"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    Tenant
+                                </a>
+                                <a
                                     href="#features"
                                     className="text-primary-foreground hover:text-primary-foreground/80 hover:bg-white/10 transition-colors py-2 px-3 rounded-lg"
                                     onClick={() => setMobileMenuOpen(false)}
@@ -97,11 +162,11 @@ const LandingHeader = () => {
                                     Features
                                 </a>
                                 <a
-                                    href="#pricing"
+                                    href="/login"
                                     className="text-primary-foreground hover:text-primary-foreground/80 hover:bg-white/10 transition-colors py-2 px-3 rounded-lg"
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
-                                    Pricing
+                                    Login
                                 </a>
                                 <a
                                     href="#contact"
@@ -110,24 +175,17 @@ const LandingHeader = () => {
                                 >
                                     Contact Us
                                 </a>
-                                <a
-                                    href="/documentation"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary-foreground hover:text-primary-foreground/80 hover:bg-white/10 transition-colors py-2 px-3 rounded-lg"
-                                    onClick={() => setMobileMenuOpen(false)}
+                                <button
+                                    type="button"
+                                    className="flex items-center gap-2 text-primary-foreground hover:text-primary-foreground/80 hover:bg-white/10 transition-colors py-2 px-3 rounded-lg text-left"
+                                    onClick={() => {
+                                        setSearchOpen(true);
+                                        setMobileMenuOpen(false);
+                                    }}
                                 >
-                                    Documentation
-                                </a>
-                                <a
-                                    href="https://www.figma.com/design/CXkcqLPtSwft5qe09M41PB/Racoon-Tenancy-App-Wireframes?node-id=86-1687&p=f&t=dOqBec3rr28PU3Fj-0"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary-foreground hover:text-primary-foreground/80 hover:bg-white/10 transition-colors py-2 px-3 rounded-lg"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                >
-                                    Design Files
-                                </a>
+                                    <Search className="w-5 h-5" />
+                                    Search
+                                </button>
                             </nav>
                         </div>
                     </>,

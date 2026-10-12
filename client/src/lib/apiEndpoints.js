@@ -23,6 +23,7 @@ export const API_ENDPOINTS = {
   // Upload endpoints
   UPLOADS: {
     BASE: `${API_VERSION}/upload`,
+    SUPABASE_IMAGE: `${API_VERSION}/upload/supabase-image`,
   },
 
   // Maintenance endpoints

@@ -97,7 +97,7 @@ export default function LoginPage() {
     <div 
       className="min-h-screen flex flex-col items-center justify-center p-4 relative"
       style={{
-        backgroundImage: 'url(/images/PropEase_bg.jpg)',
+        backgroundImage: 'url(/images/MucoProps_bg.jpg)',
         backgroundAttachment: 'fixed',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',

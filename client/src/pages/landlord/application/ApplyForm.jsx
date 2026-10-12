@@ -40,6 +40,7 @@ const ApplyForm = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
+  const [depositReceiptFile, setDepositReceiptFile] = useState(null);
   const [redirectAfterSubmit, setRedirectAfterSubmit] = useState(false);
   const documentInputRef = useRef(null);
   const employmentProofInputRefs = useRef({});
@@ -54,8 +55,12 @@ const ApplyForm = () => {
     phone: "",
     dateOfBirth: null,
     currentAddress: "",
+    currentLandlord: "",
+    currentLandlordContact: "",
+    currentJob: "",
     moveInDate: null,
     monthlyIncome: "",
+    paymentMethod: "",
     occupantsCount: 0,
     petsCount: 0,
     numberOfTenants: 1,
@@ -183,6 +188,23 @@ const ApplyForm = () => {
     },
   });
 
+  const depositReceiptMutation = useMutation({
+    mutationFn: async () => {
+      if (!depositReceiptFile) throw new Error("Select a receipt first");
+      const uploadData = new FormData();
+      uploadData.append("file", depositReceiptFile);
+      uploadData.append("category", "receipts");
+      const uploadResponse = await api.post("/api/v1/upload/supabase-image", uploadData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return api.post(`/api/v1/applications/${applicationMeta.id}/deposit-receipt`, {
+        receiptUrl: uploadResponse.data?.data?.fileUrl || uploadResponse.data?.fileUrl,
+      });
+    },
+    onSuccess: () => toast.success("Deposit receipt submitted to the landlord."),
+    onError: (error) => toast.error(error.response?.data?.message || error.message || "Unable to submit receipt"),
+  });
+
   // Parse requirements from applicationMeta.message (stored as JSON string)
   const requirements = React.useMemo(() => {
     if (!applicationMeta?.message) return null;
@@ -204,7 +226,7 @@ const ApplyForm = () => {
   const isAlreadySubmitted = React.useMemo(() => {
     if (!applicationMeta) return false;
     // Check if status is not PENDING (meaning it's been submitted)
-    if (applicationMeta.status && applicationMeta.status !== "PENDING") {
+    if (applicationMeta.status && !["PENDING", "PRE_APPROVED", "DEPOSIT_REQUESTED"].includes(applicationMeta.status)) {
       return true;
     }
     // Check if application has real data (not placeholder data)
@@ -306,6 +328,29 @@ const ApplyForm = () => {
               Expired on: {format(new Date(applicationMeta.expirationDate), "PPP")}
             </p>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  if (applicationMeta.status === "DEPOSIT_REQUESTED") {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
+        <div className="max-w-xl w-full bg-stone-50 p-6 rounded-lg shadow border border-stone-200 space-y-5">
+          <h2 className="text-2xl font-semibold">Submit your deposit receipt</h2>
+          <p className="text-gray-600">Deposit amount: <strong>${Number(applicationMeta.depositAmount || 0).toLocaleString()}</strong></p>
+          <div className="rounded-lg bg-white p-4 space-y-2">
+            <p><strong>Method:</strong> {applicationMeta.depositMethod}</p>
+            <p className="whitespace-pre-wrap"><strong>Instructions:</strong> {applicationMeta.depositInstructions}</p>
+          </div>
+          <Input type="file" accept="image/*" onChange={(event) => setDepositReceiptFile(event.target.files?.[0] || null)} />
+          <Button
+            className="w-full"
+            disabled={!depositReceiptFile || depositReceiptMutation.isPending}
+            onClick={() => depositReceiptMutation.mutate()}
+          >
+            {depositReceiptMutation.isPending ? "Submitting..." : "Submit deposit receipt"}
+          </Button>
         </div>
       </div>
     );
@@ -625,7 +670,11 @@ const ApplyForm = () => {
         dateOfBirth: form.dateOfBirth ? form.dateOfBirth.toISOString() : null,
         monthlyIncome: form.monthlyIncome ? Number(form.monthlyIncome) : null,
         currentAddress: form.currentAddress || null,
+        currentLandlord: form.currentLandlord || null,
+        currentLandlordContact: form.currentLandlordContact || null,
+        currentJob: form.currentJob || null,
         moveInDate: form.moveInDate ? form.moveInDate.toISOString() : null,
+        paymentMethod: form.paymentMethod || null,
         occupants: form.occupantsCount
           ? { count: Number(form.occupantsCount) }
           : null,
@@ -881,6 +930,46 @@ const ApplyForm = () => {
                   {errors.currentAddress && (
                     <p className="text-red-500 text-sm">{errors.currentAddress}</p>
                   )}
+                </div>
+
+                <div className="space-y-1 md:space-y-2">
+                  <Label className="mb-1 text-xs md:text-sm">Current Landlord</Label>
+                  <Input
+                    value={form.currentLandlord}
+                    onChange={(e) => updateField("currentLandlord", e.target.value)}
+                    className="bg-white"
+                    placeholder="Current landlord name"
+                  />
+                </div>
+
+                <div className="space-y-1 md:space-y-2">
+                  <Label className="mb-1 text-xs md:text-sm">Current Landlord Contact</Label>
+                  <Input
+                    value={form.currentLandlordContact}
+                    onChange={(e) => updateField("currentLandlordContact", e.target.value)}
+                    className="bg-white"
+                    placeholder="Email or phone"
+                  />
+                </div>
+
+                <div className="space-y-1 md:space-y-2">
+                  <Label className="mb-1 text-xs md:text-sm">Current Job</Label>
+                  <Input
+                    value={form.currentJob}
+                    onChange={(e) => updateField("currentJob", e.target.value)}
+                    className="bg-white"
+                    placeholder="Job title or employer"
+                  />
+                </div>
+
+                <div className="space-y-1 md:space-y-2">
+                  <Label className="mb-1 text-xs md:text-sm">Preferred Payment Method</Label>
+                  <Input
+                    value={form.paymentMethod}
+                    onChange={(e) => updateField("paymentMethod", e.target.value)}
+                    className="bg-white"
+                    placeholder="e-Transfer, direct debit, etc."
+                  />
                 </div>
               </div>
             </div>

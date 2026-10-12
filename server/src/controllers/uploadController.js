@@ -3,6 +3,21 @@ import {
   generateDownloadUrl,
 } from "../services/fileStorageService.js";
 import { SuccessResponse, HandleError } from "../utils/httpResponse.js";
+import { uploadImage } from "../services/supabaseStorageService.js";
+
+export async function uploadImageToSupabase(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "Missing image file" });
+    }
+
+    const category = req.body.category || "listings";
+    const result = await uploadImage(req.file, req.user.id, category);
+    return SuccessResponse(res, 201, "Image uploaded successfully", result);
+  } catch (error) {
+    return HandleError(res, error);
+  }
+}
 
 export async function getawsS3PresignedUrl(req, res) {
   try {

@@ -7,6 +7,9 @@ import {
   deleteApplicationController,
   bulkDeleteApplicationsController,
   submitPublicApplicationController,
+  createTenantInterestController,
+  requestDepositController,
+  submitDepositReceiptController,
 } from "../controllers/requestApplicationController.js";
 import { authenticate } from "../middleware/AuthMiddleware.js";
 import { authorize } from "../middleware/authorizeMiddlewear.js";
@@ -207,6 +210,13 @@ router.get(
   getAllApplicationsController
 );
 
+router.post(
+  "/interest",
+  authenticate,
+  authorize(["TENANT"]),
+  createTenantInterestController
+);
+
 router.put("/public/:publicId", submitPublicApplicationController);
 
 router.get("/:publicId", getApplicationByPublicIdController);
@@ -216,6 +226,20 @@ router.patch(
   authenticate,
   authorize(["ADMIN"]),
   updateApplicationStatusController
+);
+
+router.post(
+  "/:id/deposit-request",
+  authenticate,
+  authorize(["ADMIN"]),
+  requestDepositController
+);
+
+router.post(
+  "/:id/deposit-receipt",
+  authenticate,
+  authorize(["TENANT"]),
+  submitDepositReceiptController
 );
 
 router.delete(

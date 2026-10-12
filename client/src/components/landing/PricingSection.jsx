@@ -45,7 +45,7 @@ const PricingSection = ({ sectionRef }) => {
                                 </li>
                                 <li className="flex items-start opacity-50">
                                     <X className="w-5 h-5 text-gray-400 mr-3 mt-0.5 flex-shrink-0" />
-                                    <span>No analytics or PropEase lease creation</span>
+                                    <span>No analytics or MucoProps lease creation</span>
                                 </li>
                                 <li className="flex items-start opacity-50">
                                     <X className="w-5 h-5 text-gray-400 mr-3 mt-0.5 flex-shrink-0" />

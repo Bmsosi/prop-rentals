@@ -9,7 +9,10 @@ import {
   updateApplicationStatus,
   deleteApplication,
   bulkDeleteApplications,
+  requestDeposit,
+  submitDepositReceipt,
 } from "../services/requestApplicationService.js";
+import { createTenantInterest } from "../services/requestApplicationService.js";
 import {
   CreatedResponse,
   SuccessResponse,
@@ -30,6 +33,28 @@ export async function createApplicationController(req, res) {
       "Application created successfully",
       application
     );
+  } catch (error) {
+    return HandleError(res, error);
+  }
+}
+
+export async function createTenantInterestController(req, res) {
+  try {
+    const tenant = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { id: true, email: true, firstName: true, lastName: true, phone: true },
+    });
+
+    if (!tenant) {
+      return res.status(401).json({ success: false, message: "Tenant not found" });
+    }
+
+    const application = await createTenantInterest(
+      tenant,
+      req.body.listingId,
+      req.body.message
+    );
+    return CreatedResponse(res, "Interest sent to the landlord", application);
   } catch (error) {
     return HandleError(res, error);
   }
@@ -106,7 +131,7 @@ export async function submitPublicApplicationController(req, res) {
     // 1. Status is not PENDING (e.g., NEW, APPROVED, REJECTED, etc.)
     // 2. OR it has real data (not placeholder data)
     const isSubmitted = 
-      application.status !== "PENDING" ||
+      !["PENDING", "PRE_APPROVED"].includes(application.status) ||
       (application.fullName && application.fullName !== "N/A" && application.email && application.email !== "na@example.com");
 
     if (isSubmitted) {
@@ -126,12 +151,16 @@ export async function submitPublicApplicationController(req, res) {
         phone: data.phone || null,
         dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
         currentAddress: data.currentAddress || null,
+        currentLandlord: data.currentLandlord || null,
+        currentLandlordContact: data.currentLandlordContact || null,
+        currentJob: data.currentJob || null,
         moveInDate: data.moveInDate ? new Date(data.moveInDate) : null,
         monthlyIncome: data.monthlyIncome || null,
+        paymentMethod: data.paymentMethod || null,
         message: data.message || null,
         documents: data.documents || null,
         references: data.references || null,
-        status: ApplicationStatus.NEW,
+        status: ApplicationStatus.PENDING,
       },
       include: {
         listing: {
@@ -247,6 +276,24 @@ export async function updateApplicationStatusController(req, res) {
         : `Application ${body.status.toLowerCase()} successfully`;
 
     return SuccessResponse(res, 200, message, result);
+  } catch (error) {
+    return HandleError(res, error);
+  }
+}
+
+export async function requestDepositController(req, res) {
+  try {
+    const result = await requestDeposit(req.params.id, req.user.id, req.body);
+    return SuccessResponse(res, 200, "Deposit instructions sent to tenant", result);
+  } catch (error) {
+    return HandleError(res, error);
+  }
+}
+
+export async function submitDepositReceiptController(req, res) {
+  try {
+    const result = await submitDepositReceipt(req.params.id, req.user.id, req.body.receiptUrl);
+    return SuccessResponse(res, 200, "Deposit receipt submitted", result);
   } catch (error) {
     return HandleError(res, error);
   }

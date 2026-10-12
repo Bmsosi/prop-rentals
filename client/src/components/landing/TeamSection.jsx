@@ -18,7 +18,7 @@ const TeamSection = ({ sectionRef }) => {
     ];
 
     return (
-        <section className="py-8 sm:py-16 lg:py-20 relative overflow-hidden">
+        <section id="team" className="py-8 sm:py-16 lg:py-20 relative overflow-hidden">
             <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8 relative z-10">
                 <div className="text-center mb-6 sm:mb-12 md:mb-16" ref={sectionRef}>
                     <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary mb-4 sm:mb-6 md:mb-8 leading-relaxed">

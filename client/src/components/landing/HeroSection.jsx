@@ -1,20 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, X, Download, Github } from "lucide-react";
+import { Building2, Users, X } from "lucide-react";
 
 const HeroSection = () => {
     const navigate = useNavigate();
     const [showMaintenanceAlert, setShowMaintenanceAlert] = useState(false);
-
-    const handleDownloadProposal = () => {
-        const link = document.createElement('a');
-        link.href = '/PropEase_Proposal.pdf';
-        link.download = 'PropEase_Proposal.pdf';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
 
     return (
         <section
@@ -69,21 +60,21 @@ const HeroSection = () => {
                             <ArrowRight className="w-5 h-5 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-8" />
                         </Button> */}
                         <Button
-                            onClick={handleDownloadProposal}
+                            onClick={() => navigate("/signup?role=ADMIN")}
                             style={{ background: 'linear-gradient(to right, rgb(29 55 66 / 100%), rgb(29 55 66 / 85%))', boxShadow: '0 3px 0px rgba(254, 255, 248, 0.1), 0 3px 7px rgba(254, 255, 248, 0.1)' }}
                             className="text-primary-foreground hover:opacity-90 rounded-2xl sm:rounded-4xl text-base sm:text-xl md:text-2xl lg:text-3xl px-6 py-6 sm:px-8 sm:py-6 md:px-12 md:py-6 lg:px-16 lg:py-10 w-[calc(50%-6px)] sm:w-[220px] md:w-[250px] lg:w-[280px] animate-bounce-button flex items-center justify-center gap-3 sm:gap-3 md:gap-4"
                         >
-                            <Download className="download-icon-proposal" />
-                            <span>Proposal</span>
+                            <Building2 className="download-icon-proposal" />
+                            <span>Landlords</span>
                         </Button>
                         <Button
-                            onClick={() => window.open("https://github.com/demilade111/Rental-management", "_blank")}
+                            onClick={() => navigate("/signup?role=TENANT")}
                             variant="outline"
                             style={{ border: '2px solid rgba(254, 255, 248, 0.3)' }}
                             className="text-primary bg-primary-foreground/85 hover:bg-primary-foreground/55 rounded-2xl sm:rounded-4xl text-base sm:text-xl md:text-2xl lg:text-3xl px-6 py-6 sm:px-8 sm:py-6 md:px-12 md:py-6 lg:px-16 lg:py-10 w-[calc(50%-6px)] sm:w-[220px] md:w-[250px] lg:w-[280px] flex items-center justify-center gap-3 sm:gap-3 md:gap-4"
                         >
-                            <Github className="download-icon-proposal" />
-                            <span>GitHub</span>
+                            <Users className="download-icon-proposal" />
+                            <span>Tenants</span>
                         </Button>
                     </div>
                 </div>

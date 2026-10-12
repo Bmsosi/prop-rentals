@@ -39,6 +39,7 @@ const getStatusColor = (status) => {
 const ApplicationCard = ({ 
     app, 
     onApprove, 
+    onRequestDeposit,
     onReject, 
     onSendLease, 
     onDelete, 
@@ -247,8 +248,32 @@ const ApplicationCard = ({
                                 </Button>
                             )}
 
-                            {/* Approve/Reject buttons - for NEW status and other non-final statuses */}
-                            {(app.status === "NEW" || (app.status !== "APPROVED" && app.status !== "REJECTED" && app.status !== "PENDING")) && (
+                            {app.status === "PRE_APPROVED" && (
+                                <Button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onRequestDeposit?.(app);
+                                    }}
+                                    className="text-xs px-3 py-1.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
+                                >
+                                    Ask for deposit
+                                </Button>
+                            )}
+
+                            {app.status === "DEPOSIT_SUBMITTED" && (
+                                <Button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onApprove?.(app.id);
+                                    }}
+                                    className="text-xs px-3 py-1.5 rounded-xl bg-green-700 text-white hover:bg-green-800"
+                                >
+                                    Approve tenant
+                                </Button>
+                            )}
+
+                            {/* Pre-approve/reject buttons for new applications */}
+                            {(app.status === "NEW" || app.status === "PENDING") && (
                                 <>
                                     {/* Mobile: View + Approve + Reject on one line */}
                                     <div className="flex gap-2 md:hidden w-full">
@@ -270,7 +295,7 @@ const ApplicationCard = ({
                                             disabled={isConfirming}
                                         >
                                             <Check className="w-3.5 h-3.5" />
-                                            Approve
+                                            Pre-approve
                                         </Button>
 
                                         <Button
@@ -330,7 +355,7 @@ const ApplicationCard = ({
                                                         disabled={isConfirming}
                                                     >
                                                         <Check className="w-4 h-4" />
-                                                        Approve
+                                                        Pre-approve
                                                     </button>
                                                     <button
                                                         type="button"
@@ -494,7 +519,7 @@ const ApplicationCard = ({
                                             disabled={isConfirming}
                                         >
                                             <Check className="w-4 h-4" />
-                                            Approve
+                                            Pre-approve
                                         </button>
                                         <button
                                             onClick={(e) => {

@@ -17,6 +17,7 @@ const Header = ({ user, isLandlord }) => {
   const showGreeting =
     location.pathname === "/landlord/dashboard" ||
     location.pathname === "/tenant/dashboard";
+  const isTenantProperties = location.pathname.startsWith("/tenant/properties");
 
   // Get page title from pathname
   const getPageTitle = () => {
@@ -36,6 +37,7 @@ const Header = ({ user, isLandlord }) => {
       "/landlord/accounting": "Accounting",
       "/landlord/insurance": "Insurance",
       "/landlord/account": "Account Settings",
+      "/tenant/properties": "Browse Properties",
       "/tenant/rental-info": "Rental Info",
       "/tenant/maintenance": "Maintenance",
       "/tenant/accounting": "Accounting",
@@ -78,6 +80,7 @@ const Header = ({ user, isLandlord }) => {
       "/landlord/accounting": "Track payments, and manage financial records",
       "/landlord/insurance": "Manage and track your tenants' insurance status",
       "/landlord/account": "Manage your profile and security settings",
+      "/tenant/properties": "Find available properties",
       "/tenant/rental-info": "View your rental information",
       "/tenant/maintenance": "Track and manage maintenance requests",
       "/tenant/accounting": "View your payment history",
@@ -130,6 +133,13 @@ const Header = ({ user, isLandlord }) => {
   return (
     <div className="px-4 mt-2 sm:mt-0 sm:px-6 md:px-8 pb-2 pt-4 flex justify-between items-center">
       <div className="flex items-center gap-3">
+        {isTenantProperties && (
+          <img
+            src="/mucoprops-logo.svg"
+            alt="MucoProps"
+            className="h-7 w-auto md:hidden"
+          />
+        )}
         {showGreeting ? (
           <h2 className="text-sm sm:text-base md:text-[16px] font-medium text-primary">
             Good morning, <span className="font-bold text-primary">

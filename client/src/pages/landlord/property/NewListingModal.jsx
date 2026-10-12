@@ -531,28 +531,17 @@ const NewListingModal = ({ isOpen, onClose, initialData = null, propertyId = nul
         for (const file of formData.images) {
           if (file instanceof File) {
             try {
-              // Get presigned URL from backend
-              const presignRes = await api.get(`${API_ENDPOINTS.UPLOADS.BASE}/s3-url`, {
-                params: {
-                  fileName: encodeURIComponent(file.name),
-                  fileType: file.type,
-                  category: "listings",
-                },
-              });
+              const uploadData = new FormData();
+              uploadData.append("file", file);
+              uploadData.append("category", "listings");
 
-              const { uploadURL, fileUrl } = presignRes.data.data || presignRes.data;
+              const uploadRes = await api.post(
+                API_ENDPOINTS.UPLOADS.SUPABASE_IMAGE,
+                uploadData,
+                { headers: { "Content-Type": "multipart/form-data" } }
+              );
 
-              // Upload file directly to S3 using presigned URL
-              const putRes = await fetch(uploadURL, {
-                method: "PUT",
-                headers: { "Content-Type": file.type },
-                body: file,
-              });
-
-              if (!putRes.ok) {
-                throw new Error(`Upload failed for ${file.name}`);
-              }
-
+              const { fileUrl } = uploadRes.data.data || uploadRes.data;
               uploadedUrls.push(fileUrl);
             } catch (uploadErr) {
               console.error("Image upload error:", uploadErr);

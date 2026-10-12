@@ -166,7 +166,29 @@ const Applications = () => {
         onError: () => toast.error("Failed to update status"),
     });
 
-    const handleApprove = (id) => updateStatusMutation.mutateAsync({ id, status: "APPROVED" });
+    const handleApprove = (id) => {
+        const application = applicationsData?.applications?.find((item) => item.id === id);
+        const status = application?.status === "DEPOSIT_SUBMITTED" ? "APPROVED" : "PRE_APPROVED";
+        return updateStatusMutation.mutateAsync({ id, status });
+    };
+
+    const handleRequestDeposit = async (app) => {
+        const amount = window.prompt("Deposit amount:", String(app?.listing?.securityDeposit || ""));
+        if (!amount) return;
+        const method = window.prompt("Deposit method (for example, e-Transfer):", "e-Transfer");
+        if (!method) return;
+        const instructions = window.prompt("Deposit instructions for the tenant:", "Please include the reference: MucoProps deposit.");
+        if (!instructions) return;
+        try {
+            await api.post(`${API_ENDPOINTS.APPLICATIONS.BASE}/${app.id}/deposit-request`, {
+                amount: Number(amount), method, instructions,
+            });
+            toast.success("Deposit instructions sent to the tenant");
+            refetchApplications();
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to request deposit");
+        }
+    };
     const handleReject = (id) => updateStatusMutation.mutateAsync({ id, status: "REJECTED" });
 
     const handleSendLease = async (app) => {
@@ -378,6 +400,7 @@ const Applications = () => {
                                 key={app.id}
                                 app={app}
                                 onApprove={handleApprove}
+                                onRequestDeposit={handleRequestDeposit}
                                 onSendLease={handleSendLease}
                                 onReject={handleReject}
                                 onDelete={handleDelete}

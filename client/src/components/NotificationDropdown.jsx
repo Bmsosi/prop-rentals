@@ -332,6 +332,10 @@ const NotificationDropdown = () => {
     } else if (applicationTypes.includes(notification.type)) {
       // Invalidate applications queries
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      if (notification.metadata?.publicId) {
+        navigate(`/apply/${notification.metadata.publicId}`);
+        return;
+      }
       // Navigate to applications page
       const applicationsPath = user?.role === "ADMIN" ? "/landlord/applications" : "/tenant/applications";
       navigate(applicationsPath);

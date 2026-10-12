@@ -56,7 +56,9 @@ async function fetchAllListings(req, res) {
       return res.status(200).json(cachedData);
     }
 
-    const listings = await getAllListings(userId, userRole);
+    const listings = await getAllListings(userId, userRole, {
+      browse: req.query.browse === "true",
+    });
 
     const response = {
       success: true,

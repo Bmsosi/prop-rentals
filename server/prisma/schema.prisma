@@ -136,6 +136,9 @@ enum MaintenanceCategory {
 enum ApplicationStatus {
   NEW
   PENDING
+  PRE_APPROVED
+  DEPOSIT_REQUESTED
+  DEPOSIT_SUBMITTED
   APPROVED
   REJECTED
   CANCELLED
@@ -545,7 +548,11 @@ model RequestApplication {
   dateOfBirth    DateTime?
   monthlyIncome  Float?
   currentAddress String?
+  currentLandlord String?
+  currentLandlordContact String?
+  currentJob String?
   moveInDate     DateTime?
+  paymentMethod  String?
   occupants      Json?
   pets           Json?
   documents      Json?
@@ -557,6 +564,12 @@ model RequestApplication {
   decisionNotes  String?
   leaseId        String?
   expirationDate DateTime?
+  depositAmount Float?
+  depositMethod String?
+  depositInstructions String?
+  depositReceiptUrl String?
+  depositSubmittedAt DateTime?
+  depositApprovedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

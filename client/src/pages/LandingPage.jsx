@@ -3,11 +3,12 @@ import { ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LandingHeader from "@/components/landing/LandingHeader";
 import HeroSection from "@/components/landing/HeroSection";
+import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import DashboardImageSection from "@/components/landing/DashboardImageSection";
 import PricingSection from "@/components/landing/PricingSection";
 import ContactSection from "@/components/landing/ContactSection";
-import TeamSection from "@/components/landing/TeamSection";
+import LandingImageShowcase from "@/components/landing/LandingImageShowcase";
 import LandingFooter from "@/components/landing/LandingFooter";
 import LandingStyles from "@/components/landing/LandingStyles";
 import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
@@ -17,14 +18,12 @@ const LandingPage = () => {
     const dashboardRef = useRef(null);
     const pricingRef = useRef(null);
     const contactRef = useRef(null);
-    const teamRef = useRef(null);
 
     const refs = [
         { ref: featuresRef, name: 'features' },
         { ref: dashboardRef, name: 'dashboard' },
         { ref: pricingRef, name: 'pricing' },
         { ref: contactRef, name: 'contact' },
-        { ref: teamRef, name: 'team' }
     ];
 
     useIntersectionObserver(refs);
@@ -92,6 +91,7 @@ const LandingPage = () => {
                     {/* Gradient Background - Applied to all sections except HeroSection */}
                     <div className="absolute inset-0 bg-gradient-to-r from-card via-teal-50 to-pink-50 z-0"></div>
                     <div className="relative z-10">
+                        <HowItWorksSection />
                         <FeaturesSection
                             sectionRef={featuresRef}
                         />
@@ -104,9 +104,9 @@ const LandingPage = () => {
                         <ContactSection
                             sectionRef={contactRef}
                         />
-                        <TeamSection
-                            sectionRef={teamRef}
-                        />
+                        <LandingImageShowcase />
+                        {/* Team section temporarily commented out in favor of the landing-page image showcase. */}
+                        {/* <TeamSection sectionRef={teamRef} /> */}
                         <LandingFooter />
                     </div>
                 </div>

@@ -1,5 +1,50 @@
 import { prisma } from "../prisma/client.js";
 import { generatePublicId } from "../utils/generatePublicId.js";
+import { createNotification } from "./notificationService.js";
+
+export async function createTenantInterest(tenant, listingId, message) {
+  const listing = await prisma.Listing.findUnique({
+    where: { id: listingId },
+    include: { landlord: { select: { id: true, firstName: true, lastName: true } } },
+  });
+
+  if (!listing || listing.status !== "ACTIVE") {
+    const error = new Error("Property is not available");
+    error.status = 404;
+    throw error;
+  }
+
+  const existing = await prisma.RequestApplication.findFirst({
+    where: { listingId, tenantId: tenant.id, status: { in: ["NEW", "PENDING"] } },
+  });
+
+  if (existing) return existing;
+
+  const application = await prisma.RequestApplication.create({
+    data: {
+      publicId: generatePublicId(),
+      listingId,
+      landlordId: listing.landlordId,
+      tenantId: tenant.id,
+      fullName: `${tenant.firstName || ""} ${tenant.lastName || ""}`.trim(),
+      email: tenant.email,
+      phone: tenant.phone || null,
+      message: message?.trim() || "I am interested in this property.",
+      status: "NEW",
+    },
+  });
+
+  await createNotification({
+    userId: listing.landlordId,
+    type: "APPLICATION_STATUS",
+    title: "New tenant interest",
+    body: `${application.fullName || tenant.email} is interested in ${listing.title}.`,
+    relatedId: application.id,
+    metadata: { listingId, applicationId: application.id },
+  });
+
+  return application;
+}
 
 export async function createApplication(landlordId, data) {
   const listing = await prisma.Listing.findUnique({
@@ -300,7 +345,15 @@ export async function updateApplicationStatus(applicationId, landlordId, data) {
     throw err;
   }
 
-  if (application.status !== "NEW") {
+  const allowedStatuses = data.status === "PRE_APPROVED"
+    ? ["NEW", "PENDING"]
+    : data.status === "REJECTED"
+      ? ["NEW", "PENDING", "PRE_APPROVED", "DEPOSIT_REQUESTED", "DEPOSIT_SUBMITTED"]
+      : data.status === "APPROVED"
+        ? ["DEPOSIT_SUBMITTED"]
+        : ["NEW", "PENDING"];
+
+  if (!allowedStatuses.includes(application.status)) {
     const err = new Error(
       `Cannot update application with status: ${application.status}`
     );
@@ -370,7 +423,86 @@ export async function updateApplicationStatus(applicationId, landlordId, data) {
     return { application: updatedApplication, lease };
   });
 
+  if (application.tenantId) {
+    const notificationText = {
+      PRE_APPROVED: ["Application pre-approved", "Your application has been pre-approved. Complete the application form to continue.", { applicationId, publicId: application.publicId, action: "COMPLETE_APPLICATION" }],
+      REJECTED: ["Application not approved", "The landlord has declined your application.", { applicationId }],
+      APPROVED: ["Tenant approved", "Your deposit receipt was approved and your tenancy has been approved.", { applicationId }],
+    }[data.status];
+    if (notificationText) {
+      await createNotification({
+        userId: application.tenantId,
+        type: "APPLICATION_STATUS",
+        title: notificationText[0],
+        body: notificationText[1],
+        relatedId: application.id,
+        metadata: notificationText[2],
+      });
+    }
+  }
+
   return result;
+}
+
+export async function requestDeposit(applicationId, landlordId, data) {
+  const application = await prisma.RequestApplication.findUnique({ where: { id: applicationId } });
+  if (!application || application.landlordId !== landlordId) {
+    const error = new Error("Application not found");
+    error.status = 404;
+    throw error;
+  }
+  if (application.status !== "PRE_APPROVED" && application.status !== "PENDING") {
+    const error = new Error("The application is not ready for a deposit request");
+    error.status = 400;
+    throw error;
+  }
+  const updated = await prisma.RequestApplication.update({
+    where: { id: applicationId },
+    data: {
+      status: "DEPOSIT_REQUESTED",
+      depositAmount: Number(data.amount),
+      depositMethod: data.method,
+      depositInstructions: data.instructions,
+    },
+  });
+  if (application.tenantId) {
+    await createNotification({
+      userId: application.tenantId,
+      type: "APPLICATION_STATUS",
+      title: "Deposit instructions available",
+      body: "The landlord has requested your deposit. Open the application to view the instructions.",
+      relatedId: application.id,
+      metadata: { applicationId: application.id, publicId: application.publicId, action: "PAY_DEPOSIT" },
+    });
+  }
+  return updated;
+}
+
+export async function submitDepositReceipt(applicationId, tenantId, receiptUrl) {
+  const application = await prisma.RequestApplication.findUnique({ where: { id: applicationId } });
+  if (!application || application.tenantId !== tenantId) {
+    const error = new Error("Application not found");
+    error.status = 404;
+    throw error;
+  }
+  if (application.status !== "DEPOSIT_REQUESTED") {
+    const error = new Error("A deposit has not been requested for this application");
+    error.status = 400;
+    throw error;
+  }
+  const updated = await prisma.RequestApplication.update({
+    where: { id: applicationId },
+    data: { status: "DEPOSIT_SUBMITTED", depositReceiptUrl: receiptUrl, depositSubmittedAt: new Date() },
+  });
+  await createNotification({
+    userId: application.landlordId,
+    type: "APPLICATION_STATUS",
+    title: "Deposit receipt submitted",
+    body: "A tenant has submitted a deposit receipt for your review.",
+    relatedId: application.id,
+    metadata: { applicationId: application.id, action: "REVIEW_DEPOSIT" },
+  });
+  return updated;
 }
 
 export async function deleteApplication(applicationId, landlordId) {

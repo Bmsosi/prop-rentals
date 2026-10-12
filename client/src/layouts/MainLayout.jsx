@@ -25,6 +25,8 @@ import RentalInformation from "@/pages/tenant/rentalinfo/RentalInformation";
 import Account from "@/pages/account/Account";
 import LandlordInsurance from "@/pages/landlord/insurance/LandlordInsurance";
 import TenantInsurance from "@/pages/tenant/insurance/TenantInsurance";
+import TenantProperties from "@/pages/tenant/properties/TenantProperties";
+import TenantPropertyDetails from "@/pages/tenant/properties/TenantPropertyDetails";
 import HelpSupport from "@/pages/HelpSupport";
 
 const MainLayout = () => {
@@ -56,6 +58,7 @@ const MainLayout = () => {
       ]
     : [
         { label: "Dashboard", id: "dashboard", path: "/tenant/dashboard" },
+        { label: "Browse Properties", id: "properties", path: "/tenant/properties" },
         {
           label: "Rental Info",
           id: "rental-info",
@@ -121,6 +124,8 @@ const MainLayout = () => {
             <Route path="/landlord/insurance" element={<LandlordInsurance />} />
 
             <Route path="/tenant/dashboard" element={<TenantDashboard />} />
+            <Route path="/tenant/properties" element={<TenantProperties />} />
+            <Route path="/tenant/properties/:id" element={<TenantPropertyDetails />} />
             <Route path="/tenant/rental-info" element={<TenantRentalInfo />} />
             <Route path="/tenant/maintenance" element={<Maintenance />} />
             <Route path="/tenant/accounting" element={<TenantAccounting />} />

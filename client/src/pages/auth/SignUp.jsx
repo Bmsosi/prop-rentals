@@ -25,7 +25,7 @@ export default function SignUpPage() {
     firstName: "",
     lastName: "",
     phone: "",
-    role: "TENANT",
+    role: new URLSearchParams(window.location.search).get("role") === "ADMIN" ? "ADMIN" : "TENANT",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
@@ -177,7 +177,7 @@ export default function SignUpPage() {
     <div 
       className="min-h-screen flex flex-col items-center justify-center p-4 relative"
       style={{
-        backgroundImage: 'url(/images/PropEase_bg.jpg)',
+        backgroundImage: 'url(/images/MucoProps_bg.jpg)',
         backgroundAttachment: 'fixed',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',

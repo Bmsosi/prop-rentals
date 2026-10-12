@@ -133,22 +133,17 @@ const Account = () => {
     setUploadingPhoto(true);
 
     try {
-      // Get presigned URL
-      const uploadUrlResponse = await api.get('/api/v1/upload/profile-photo-upload-url', {
-        params: {
-          fileName: file.name,
-          fileType: file.type,
-        },
-      });
+      const uploadData = new FormData();
+      uploadData.append('file', file);
+      uploadData.append('category', 'profiles');
 
-      const { uploadURL, fileUrl } = uploadUrlResponse.data.data;
+      const uploadResponse = await api.post(
+        '/api/v1/upload/supabase-image',
+        uploadData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
 
-      // Upload to S3
-      await fetch(uploadURL, {
-        method: 'PUT',
-        headers: { 'Content-Type': file.type },
-        body: file,
-      });
+      const { fileUrl } = uploadResponse.data.data || uploadResponse.data;
 
       // Update user profile with photo URL
       const response = await api.put(API_ENDPOINTS.USER.PROFILE, {
@@ -166,7 +161,7 @@ const Account = () => {
       login(updatedUser, localStorage.getItem('token'));
       queryClient.invalidateQueries(['user-profile']);
       
-      // Replace blob URL with S3 URL
+      // Replace blob URL with the Supabase Storage URL
       // Revoke the blob URL since we now have the S3 URL
       if (localPreviewUrl.startsWith('blob:')) {
         URL.revokeObjectURL(localPreviewUrl);
