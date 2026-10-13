@@ -15,6 +15,7 @@ import {
   createApplicationContract,
   submitSignedApplicationContract,
   reviewApplicationContract,
+  ensureApplicationLease,
 } from "../services/requestApplicationService.js";
 import { createTenantInterest } from "../services/requestApplicationService.js";
 import {
@@ -151,25 +152,42 @@ export async function submitPublicApplicationController(req, res) {
         });
     }
 
+    // A requirements submission contains only documents/consents. Do not
+    // overwrite the applicant and rental details collected in the first form.
+    const applicationUpdateData = {
+      status: ApplicationStatus.PENDING,
+    };
+    const hasField = (field) => Object.prototype.hasOwnProperty.call(data, field);
+    const optionalFields = [
+      "fullName",
+      "email",
+      "phone",
+      "currentAddress",
+      "currentLandlord",
+      "currentLandlordContact",
+      "currentJob",
+      "monthlyIncome",
+      "paymentMethod",
+      "numberOfTenants",
+      "message",
+      "documents",
+      "references",
+      "occupants",
+      "pets",
+    ];
+    optionalFields.forEach((field) => {
+      if (hasField(field)) applicationUpdateData[field] = data[field];
+    });
+    if (hasField("dateOfBirth")) {
+      applicationUpdateData.dateOfBirth = data.dateOfBirth ? new Date(data.dateOfBirth) : null;
+    }
+    if (hasField("moveInDate")) {
+      applicationUpdateData.moveInDate = data.moveInDate ? new Date(data.moveInDate) : null;
+    }
+
     const updatedApplication = await prisma.RequestApplication.update({
       where: { publicId },
-      data: {
-        fullName: data.fullName,
-        email: data.email,
-        phone: data.phone || null,
-        dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
-        currentAddress: data.currentAddress || null,
-        currentLandlord: data.currentLandlord || null,
-        currentLandlordContact: data.currentLandlordContact || null,
-        currentJob: data.currentJob || null,
-        moveInDate: data.moveInDate ? new Date(data.moveInDate) : null,
-        monthlyIncome: data.monthlyIncome || null,
-        paymentMethod: data.paymentMethod || null,
-        message: data.message || null,
-        documents: data.documents || null,
-        references: data.references || null,
-        status: ApplicationStatus.PENDING,
-      },
+      data: applicationUpdateData,
       include: {
         listing: {
           select: {
@@ -338,6 +356,15 @@ export async function reviewApplicationContractController(req, res) {
   try {
     const result = await reviewApplicationContract(req.params.id, req.user.id, req.body.decision, req.body.feedback);
     return SuccessResponse(res, 200, "Tenancy agreement review saved", result);
+  } catch (error) {
+    return HandleError(res, error);
+  }
+}
+
+export async function ensureApplicationLeaseController(req, res) {
+  try {
+    const result = await ensureApplicationLease(req.params.id, req.user.id);
+    return SuccessResponse(res, 200, "Lease prepared from application", result);
   } catch (error) {
     return HandleError(res, error);
   }

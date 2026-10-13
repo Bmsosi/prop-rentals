@@ -554,6 +554,7 @@ model RequestApplication {
   moveInDate     DateTime?
   paymentMethod  String?
   occupants      Json?
+  numberOfTenants Int?
   pets           Json?
   documents      Json?
   references     Json?

@@ -114,11 +114,12 @@ export async function createApplication(landlordId, data) {
       email: data.email,
       phone: data.phone || null,
       dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
-      monthlyIncome: data.monthlyIncome || null,
+      monthlyIncome: data.monthlyIncome ?? null,
       currentAddress: data.currentAddress || null,
       moveInDate: data.moveInDate ? new Date(data.moveInDate) : null,
-      occupants: data.occupants || null,
-      pets: data.pets || null,
+      occupants: data.occupants ?? null,
+      numberOfTenants: data.numberOfTenants ?? null,
+      pets: data.pets ?? null,
       documents: data.documents || null,
       references: data.references || null,
       message: data.message || null,
@@ -139,6 +140,8 @@ export async function createApplication(landlordId, data) {
           city: true,
           state: true,
           rentAmount: true,
+          rentCycle: true,
+          securityDeposit: true,
         },
       },
       employmentInfo: true,
@@ -438,6 +441,13 @@ export async function updateApplicationStatus(applicationId, landlordId, data) {
           paymentFrequency: application.listing.rentCycle || "MONTHLY",
           securityDeposit: application.listing.securityDeposit || 0,
           leaseStatus: "DRAFT",
+          paymentMethod: application.paymentMethod,
+          tenantFullName: application.fullName,
+          tenantEmail: application.email,
+          tenantPhone: application.phone,
+          occupants: application.occupants,
+          numberOfOccupants: Number(application.occupants?.count ?? application.numberOfTenants ?? 0) || null,
+          allowsOccupants: Boolean(application.occupants?.count || application.numberOfTenants),
           notes: `Auto-generated from application ${application.publicId}`,
         },
       });
@@ -473,7 +483,10 @@ export async function updateApplicationStatus(applicationId, landlordId, data) {
 }
 
 export async function requestDeposit(applicationId, landlordId, data) {
-  const application = await prisma.RequestApplication.findUnique({ where: { id: applicationId } });
+  const application = await prisma.RequestApplication.findUnique({
+    where: { id: applicationId },
+    include: { listing: true },
+  });
   if (!application || application.landlordId !== landlordId) {
     const error = new Error("Application not found");
     error.status = 404;
@@ -493,6 +506,7 @@ export async function requestDeposit(applicationId, landlordId, data) {
       depositInstructions: data.instructions,
     },
   });
+
   if (application.tenantId) {
     await createNotification({
       userId: application.tenantId,
@@ -504,6 +518,65 @@ export async function requestDeposit(applicationId, landlordId, data) {
     });
   }
   return updated;
+}
+
+export async function ensureApplicationLease(applicationId, landlordId) {
+  const application = await prisma.RequestApplication.findUnique({
+    where: { id: applicationId },
+    include: { listing: true },
+  });
+  if (!application || application.landlordId !== landlordId) {
+    const error = new Error("Application not found");
+    error.status = 404;
+    throw error;
+  }
+  if (!application.tenantId) {
+    const error = new Error("The application has no tenant account");
+    error.status = 400;
+    throw error;
+  }
+
+  if (application.leaseId) {
+    const existing = await prisma.lease.findUnique({ where: { id: application.leaseId } });
+    if (existing) return existing;
+  }
+
+  const existingDraft = await prisma.lease.findFirst({
+    where: { listingId: application.listingId, tenantId: application.tenantId, landlordId, leaseStatus: "DRAFT" },
+    orderBy: { createdAt: "desc" },
+  });
+  if (existingDraft) {
+    await prisma.RequestApplication.update({ where: { id: applicationId }, data: { leaseId: existingDraft.id } });
+    return existingDraft;
+  }
+
+  const startDate = application.moveInDate || new Date();
+  const endDate = new Date(startDate);
+  endDate.setFullYear(endDate.getFullYear() + 1);
+  const occupantCount = Number(application.occupants?.count ?? 0);
+  const lease = await prisma.lease.create({
+    data: {
+      listingId: application.listingId,
+      tenantId: application.tenantId,
+      landlordId,
+      startDate,
+      endDate,
+      rentAmount: application.listing.rentAmount,
+      paymentFrequency: application.listing.rentCycle || "MONTHLY",
+      securityDeposit: application.listing.securityDeposit || 0,
+      leaseStatus: "DRAFT",
+      paymentMethod: application.paymentMethod,
+      tenantFullName: application.fullName,
+      tenantEmail: application.email,
+      tenantPhone: application.phone,
+      occupants: application.occupants,
+      numberOfOccupants: occupantCount || application.numberOfTenants || null,
+      allowsOccupants: Boolean(occupantCount || application.numberOfTenants),
+      notes: `Auto-generated from application ${application.publicId}`,
+    },
+  });
+  await prisma.RequestApplication.update({ where: { id: applicationId }, data: { leaseId: lease.id } });
+  return lease;
 }
 
 export async function submitDepositReceipt(applicationId, tenantId, receiptUrl) {
@@ -649,7 +722,10 @@ export async function submitSignedApplicationContract(applicationId, tenantId, s
 }
 
 export async function reviewApplicationContract(applicationId, landlordId, decision, feedback) {
-  const application = await prisma.RequestApplication.findUnique({ where: { id: applicationId } });
+  const application = await prisma.RequestApplication.findUnique({
+    where: { id: applicationId },
+    include: { listing: true },
+  });
   if (!application || application.landlordId !== landlordId) {
     const error = new Error("Application not found");
     error.status = 404;
@@ -671,6 +747,10 @@ export async function reviewApplicationContract(applicationId, landlordId, decis
       ...(contractStatus === "APPROVED" ? { status: "APPROVED" } : {}),
     },
   });
+
+  if (contractStatus === "APPROVED" && application.tenantId) {
+    await ensureApplicationLease(applicationId, landlordId);
+  }
 
   if (application.tenantId) {
     const approved = contractStatus === "APPROVED";

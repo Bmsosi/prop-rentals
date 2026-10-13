@@ -262,6 +262,12 @@ const Applications = () => {
                 leaseType = "STANDARD";
             }
 
+            if (!lease) {
+                const prepared = await api.post(`${API_ENDPOINTS.APPLICATIONS.BASE}/${app.id}/lease`);
+                lease = prepared.data?.data || prepared.data?.lease;
+                leaseType = "STANDARD";
+            }
+
             // If no lease found (neither custom nor standard), show redirect modal
             if (!lease) {
                 setRedirectUrl("/landlord/leases");

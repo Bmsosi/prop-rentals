@@ -129,6 +129,7 @@ const ApplicationDetailsDialog = ({ open, onClose, application }) => {
                                     <div className="ml-4 border-l-2 pl-3 border-l-gray-300">
                                         <p><b>Move-in Date:</b> {formatDate(application.moveInDate, "Not selected")}</p>
                                         <p><b>Occupants:</b> {getCount(application.occupants ?? application.occupantsCount)}</p>
+                                        <p><b>Number of Tenants:</b> {application.numberOfTenants ?? "Not provided"}</p>
                                         <p><b>Pets:</b> {getCount(application.pets ?? application.petsCount)}</p>
                                         <p><b>Monthly Income:</b> {application.monthlyIncome ?? "Not provided"}</p>
                                         <p><b>Payment Method:</b> {application.paymentMethod ?? "Not provided"}</p>

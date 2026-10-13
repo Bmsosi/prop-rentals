@@ -14,6 +14,7 @@ import {
   createApplicationContractController,
   submitSignedApplicationContractController,
   reviewApplicationContractController,
+  ensureApplicationLeaseController,
 } from "../controllers/requestApplicationController.js";
 import { authenticate } from "../middleware/AuthMiddleware.js";
 import { authorize } from "../middleware/authorizeMiddlewear.js";
@@ -272,6 +273,13 @@ router.patch(
   authenticate,
   authorize(["ADMIN"]),
   reviewApplicationContractController
+);
+
+router.post(
+  "/:id/lease",
+  authenticate,
+  authorize(["ADMIN"]),
+  ensureApplicationLeaseController
 );
 
 router.delete(
