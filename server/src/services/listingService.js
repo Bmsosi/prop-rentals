@@ -152,8 +152,8 @@ async function getAllListings(userId, userRole, options = {}) {
     return listings;
   }
 
-  // ADMIN: return all listings owned
-  if (userRole === "ADMIN") {
+  // Landlords and admins can manage/view listings they own.
+  if (userRole === "LANDLORD" || userRole === "ADMIN") {
     return prisma.listing.findMany({
       where: { landlordId: userId },
       include: {

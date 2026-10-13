@@ -1,5 +1,6 @@
 const landlordSteps = [
   "Sign up for a MucoProps account",
+  "Choose a subscription plan that fits your needs",
   "Create your first property listing",
   "Get a notification when a tenant shows interest in your property",
   "Pre-approve tenants and request additional information",

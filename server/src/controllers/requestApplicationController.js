@@ -12,6 +12,9 @@ import {
   requestDeposit,
   submitDepositReceipt,
   sendApplicationRequirements,
+  createApplicationContract,
+  submitSignedApplicationContract,
+  reviewApplicationContract,
 } from "../services/requestApplicationService.js";
 import { createTenantInterest } from "../services/requestApplicationService.js";
 import {
@@ -308,6 +311,33 @@ export async function sendApplicationRequirementsController(req, res) {
   try {
     const result = await sendApplicationRequirements(req.params.id, req.user.id);
     return SuccessResponse(res, 200, "Application requirements link sent to tenant", result);
+  } catch (error) {
+    return HandleError(res, error);
+  }
+}
+
+export async function createApplicationContractController(req, res) {
+  try {
+    const result = await createApplicationContract(req.params.id, req.user.id, req.body.contractUrl);
+    return SuccessResponse(res, 200, "Tenancy agreement sent to tenant", result);
+  } catch (error) {
+    return HandleError(res, error);
+  }
+}
+
+export async function submitSignedApplicationContractController(req, res) {
+  try {
+    const result = await submitSignedApplicationContract(req.params.id, req.user.id, req.body.signedContractUrl);
+    return SuccessResponse(res, 200, "Signed tenancy agreement submitted", result);
+  } catch (error) {
+    return HandleError(res, error);
+  }
+}
+
+export async function reviewApplicationContractController(req, res) {
+  try {
+    const result = await reviewApplicationContract(req.params.id, req.user.id, req.body.decision, req.body.feedback);
+    return SuccessResponse(res, 200, "Tenancy agreement review saved", result);
   } catch (error) {
     return HandleError(res, error);
   }

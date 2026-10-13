@@ -11,6 +11,9 @@ import {
   requestDepositController,
   submitDepositReceiptController,
   sendApplicationRequirementsController,
+  createApplicationContractController,
+  submitSignedApplicationContractController,
+  reviewApplicationContractController,
 } from "../controllers/requestApplicationController.js";
 import { authenticate } from "../middleware/AuthMiddleware.js";
 import { authorize } from "../middleware/authorizeMiddlewear.js";
@@ -248,6 +251,27 @@ router.post(
   authenticate,
   authorize(["ADMIN"]),
   sendApplicationRequirementsController
+);
+
+router.post(
+  "/:id/contract",
+  authenticate,
+  authorize(["ADMIN"]),
+  createApplicationContractController
+);
+
+router.post(
+  "/:id/contract/signed",
+  authenticate,
+  authorize(["TENANT"]),
+  submitSignedApplicationContractController
+);
+
+router.patch(
+  "/:id/contract/review",
+  authenticate,
+  authorize(["ADMIN"]),
+  reviewApplicationContractController
 );
 
 router.delete(

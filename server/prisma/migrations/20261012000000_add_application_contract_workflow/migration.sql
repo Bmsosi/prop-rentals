@@ -1,0 +1,5 @@
+ALTER TABLE "RequestApplication"
+  ADD COLUMN IF NOT EXISTS "contractUrl" TEXT,
+  ADD COLUMN IF NOT EXISTS "signedContractUrl" TEXT,
+  ADD COLUMN IF NOT EXISTS "contractStatus" TEXT NOT NULL DEFAULT 'NONE',
+  ADD COLUMN IF NOT EXISTS "contractFeedback" TEXT;

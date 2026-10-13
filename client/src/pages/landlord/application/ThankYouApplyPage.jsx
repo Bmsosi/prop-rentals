@@ -2,10 +2,11 @@ import React from "react";
 import { CheckCircle } from "lucide-react"; // ShadCN-compatible icon
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const ThankYouApplyPage = () => {
     const location = useLocation();
+    const navigate = useNavigate();
     const landlordEmail = location.state?.landlordEmail || null;
     
     return (
@@ -22,6 +23,9 @@ const ThankYouApplyPage = () => {
                             Landlord contact: <strong>{landlordEmail}</strong>
                         </p>
                     )}
+                    <Button onClick={() => navigate("/tenant/dashboard")} className="mt-2">
+                        Return to Dashboard
+                    </Button>
                 </CardContent>
             </Card>
         </div>

@@ -41,6 +41,7 @@ const ApplyForm = () => {
   const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [depositReceiptFile, setDepositReceiptFile] = useState(null);
+  const [contractFile, setContractFile] = useState(null);
   const [verificationConsents, setVerificationConsents] = useState({ background: false, credit: false });
   const [redirectAfterSubmit, setRedirectAfterSubmit] = useState(false);
   const documentInputRef = useRef(null);
@@ -226,6 +227,26 @@ const ApplyForm = () => {
     onError: (error) => toast.error(error.response?.data?.message || error.message || "Unable to submit documents"),
   });
 
+  const contractMutation = useMutation({
+    mutationFn: async () => {
+      if (!contractFile) throw new Error("Select the completed and signed agreement first");
+      const uploadData = new FormData();
+      uploadData.append("file", contractFile);
+      uploadData.append("category", "applications");
+      const uploadResponse = await api.post("/api/v1/upload/supabase-document", uploadData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const signedContractUrl = uploadResponse.data?.data?.fileUrl || uploadResponse.data?.fileUrl;
+      return api.post(`${API_ENDPOINTS.APPLICATIONS.BASE}/${applicationMeta.id}/contract/signed`, { signedContractUrl });
+    },
+    onSuccess: async () => {
+      setContractFile(null);
+      toast.success("Signed agreement sent to the landlord.");
+      await refetchApplicationMeta();
+    },
+    onError: (error) => toast.error(error.response?.data?.message || error.message || "Unable to submit the signed agreement"),
+  });
+
   // Parse requirements from applicationMeta.message (stored as JSON string)
   const requirements = React.useMemo(() => {
     if (!applicationMeta?.message) return null;
@@ -243,6 +264,7 @@ const ApplyForm = () => {
     return new Date() > new Date(applicationMeta.expirationDate);
   }, [applicationMeta]);
   const isRequirementsOnly = applicationMeta?.status === "PENDING" && Boolean(applicationMeta?.requirementsSentAt);
+  const isContractStage = isRequirementsOnly && ["SENT", "SIGNED", "RESEND_REQUESTED"].includes(applicationMeta?.contractStatus);
 
   useEffect(() => {
     if (isRequirementsOnly) setStep(4);
@@ -380,6 +402,39 @@ const ApplyForm = () => {
           >
             {depositReceiptMutation.isPending ? "Submitting..." : "Submit deposit receipt"}
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isContractStage) {
+    const canSubmitContract = ["SENT", "RESEND_REQUESTED"].includes(applicationMeta.contractStatus);
+    return (
+      <div className="min-h-screen flex items-start justify-center py-8 px-4 bg-gray-50">
+        <div className="w-full max-w-3xl bg-stone-50 rounded-lg shadow p-6 md:p-8 border border-stone-200 space-y-6">
+          <div>
+            <h1 className="text-2xl font-semibold">Residential Tenancy Agreement</h1>
+            <p className="text-gray-600 mt-2">Download the agreement, complete and sign it, then upload the signed copy for your landlord to review.</p>
+          </div>
+          <div className="rounded-lg border bg-white p-4 space-y-3">
+            <a href={applicationMeta.contractUrl} target="_blank" rel="noreferrer" className="text-primary underline text-sm">
+              Download Residential Tenancy Agreement
+            </a>
+            {applicationMeta.contractStatus === "SIGNED" && (
+              <p className="text-sm text-blue-700">Your signed agreement has been sent to the landlord and is awaiting review.</p>
+            )}
+            {applicationMeta.contractStatus === "RESEND_REQUESTED" && (
+              <p className="text-sm text-amber-700">The landlord requested changes: {applicationMeta.contractFeedback || "Please complete any missing information and resend the agreement."}</p>
+            )}
+            {canSubmitContract && (
+              <>
+                <Input type="file" accept="application/pdf,.doc,.docx,image/*" onChange={(event) => setContractFile(event.target.files?.[0] || null)} />
+                <Button className="w-full" disabled={!contractFile || contractMutation.isPending} onClick={() => contractMutation.mutate()}>
+                  {contractMutation.isPending ? "Submitting..." : "Submit Signed Agreement"}
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -666,7 +721,9 @@ const ApplyForm = () => {
     });
   };
 
-  const handleAddDocument = (files) => {
+  // Use a function declaration because the requirements-stage UI can render
+  // before the helper section below is reached during this component call.
+  function handleAddDocument(files) {
     const fileArray = Array.isArray(files) ? files : [files];
     const MAX_FILES = 3;
     const currentCount = form.documents?.length || 0;
@@ -682,7 +739,7 @@ const ApplyForm = () => {
       const newDocs = [...(s.documents || []), ...filesToAdd];
       return { ...s, documents: newDocs };
     });
-  };
+  }
 
   const handleRemoveDocument = (index) => {
     setForm((s) => {

@@ -573,6 +573,121 @@ export async function sendApplicationRequirements(applicationId, landlordId) {
   return updated;
 }
 
+export async function createApplicationContract(applicationId, landlordId, contractUrl) {
+  const application = await prisma.RequestApplication.findUnique({
+    where: { id: applicationId },
+    include: { listing: { select: { title: true } } },
+  });
+  if (!application || application.landlordId !== landlordId) {
+    const error = new Error("Application not found");
+    error.status = 404;
+    throw error;
+  }
+  if (!contractUrl) {
+    const error = new Error("A tenancy agreement file is required");
+    error.status = 400;
+    throw error;
+  }
+
+  const updated = await prisma.RequestApplication.update({
+    where: { id: applicationId },
+    data: {
+      contractUrl,
+      signedContractUrl: null,
+      contractStatus: "SENT",
+      contractFeedback: null,
+    },
+  });
+
+  if (application.tenantId) {
+    await createNotification({
+      userId: application.tenantId,
+      type: "APPLICATION_STATUS",
+      title: "Tenancy agreement ready to sign",
+      body: `Review, sign, and return the tenancy agreement for ${application.listing.title}.`,
+      relatedId: application.id,
+      metadata: { applicationId: application.id, publicId: application.publicId, action: "SIGN_CONTRACT" },
+    });
+  }
+  return updated;
+}
+
+export async function submitSignedApplicationContract(applicationId, tenantId, signedContractUrl) {
+  const application = await prisma.RequestApplication.findUnique({
+    where: { id: applicationId },
+    include: { listing: { select: { title: true } } },
+  });
+  if (!application || application.tenantId !== tenantId) {
+    const error = new Error("Application not found");
+    error.status = 404;
+    throw error;
+  }
+  if (!["SENT", "RESEND_REQUESTED"].includes(application.contractStatus)) {
+    const error = new Error("The landlord has not requested a signed agreement");
+    error.status = 400;
+    throw error;
+  }
+  if (!signedContractUrl) {
+    const error = new Error("A signed agreement file is required");
+    error.status = 400;
+    throw error;
+  }
+
+  const updated = await prisma.RequestApplication.update({
+    where: { id: applicationId },
+    data: { signedContractUrl, contractStatus: "SIGNED", contractFeedback: null },
+  });
+  await createNotification({
+    userId: application.landlordId,
+    type: "APPLICATION_STATUS",
+    title: "Signed tenancy agreement received",
+    body: `The tenant returned the signed tenancy agreement for ${application.listing.title}.`,
+    relatedId: application.id,
+    metadata: { applicationId: application.id, status: "SIGNED_CONTRACT" },
+  });
+  return updated;
+}
+
+export async function reviewApplicationContract(applicationId, landlordId, decision, feedback) {
+  const application = await prisma.RequestApplication.findUnique({ where: { id: applicationId } });
+  if (!application || application.landlordId !== landlordId) {
+    const error = new Error("Application not found");
+    error.status = 404;
+    throw error;
+  }
+  if (application.contractStatus !== "SIGNED") {
+    const error = new Error("A signed agreement is required before it can be reviewed");
+    error.status = 400;
+    throw error;
+  }
+
+  const normalizedDecision = String(decision || "").toUpperCase();
+  const contractStatus = normalizedDecision === "APPROVE" ? "APPROVED" : normalizedDecision === "RESEND" ? "RESEND_REQUESTED" : "REJECTED";
+  const updated = await prisma.RequestApplication.update({
+    where: { id: applicationId },
+    data: {
+      contractStatus,
+      contractFeedback: feedback || null,
+      ...(contractStatus === "APPROVED" ? { status: "APPROVED" } : {}),
+    },
+  });
+
+  if (application.tenantId) {
+    const approved = contractStatus === "APPROVED";
+    await createNotification({
+      userId: application.tenantId,
+      type: "APPLICATION_STATUS",
+      title: approved ? "Tenancy agreement approved" : "Tenancy agreement needs attention",
+      body: approved
+        ? "Your signed tenancy agreement was approved. Your application is now approved."
+        : `The landlord asked you to review and resend the tenancy agreement${feedback ? `: ${feedback}` : "."}`,
+      relatedId: application.id,
+      metadata: { applicationId: application.id, publicId: application.publicId, action: approved ? "CONTRACT_APPROVED" : "SIGN_CONTRACT" },
+    });
+  }
+  return updated;
+}
+
 export async function deleteApplication(applicationId, landlordId) {
   const application = await prisma.RequestApplication.findUnique({
     where: { id: applicationId },

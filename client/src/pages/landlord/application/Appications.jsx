@@ -16,6 +16,7 @@ import LeaseRedirectModal from "./LeaseRedirectModal";
 import { useAuthStore } from "@/store/authStore";
 import Pagination from "@/components/shared/Pagination";
 import BulkDeleteActionBar from "@/components/shared/BulkDeleteActionBar";
+import ContractUploadDialog from "./ContractUploadDialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus } from "lucide-react";
 
@@ -52,6 +53,9 @@ const Applications = () => {
     // State for Shadcn modal
     const [inviteModalOpen, setInviteModalOpen] = useState(false);
     const [inviteUrl, setInviteUrl] = useState("");
+    const [contractDialogOpen, setContractDialogOpen] = useState(false);
+    const [contractApplication, setContractApplication] = useState(null);
+    const [contractSubmitting, setContractSubmitting] = useState(false);
     
     // State for bulk selection
     const [selectedItems, setSelectedItems] = useState(new Set());
@@ -75,6 +79,7 @@ const Applications = () => {
             // console.log(res.data)
             return res.data.data || res.data;
         },
+        refetchOnWindowFocus: true,
     });
 
     // Fetch lease status per listing (active + terminated)
@@ -199,6 +204,44 @@ const Applications = () => {
             toast.error(error.response?.data?.message || "Failed to send requirements link");
         }
     };
+
+    const handleCreateContract = (app) => {
+        setContractApplication(app);
+        setContractDialogOpen(true);
+    };
+
+    const handleSubmitContract = async (file) => {
+        if (!contractApplication || !file) return;
+        setContractSubmitting(true);
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("category", "applications");
+            const upload = await api.post("/api/v1/upload/supabase-document", formData, { headers: { "Content-Type": "multipart/form-data" } });
+            const contractUrl = upload.data?.data?.fileUrl || upload.data?.fileUrl;
+            await api.post(`${API_ENDPOINTS.APPLICATIONS.BASE}/${contractApplication.id}/contract`, { contractUrl });
+            toast.success("Agreement sent to the tenant");
+            setContractDialogOpen(false);
+            setContractApplication(null);
+            refetchApplications();
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to send the agreement");
+        } finally {
+            setContractSubmitting(false);
+        }
+    };
+
+    const handleReviewContract = async (app, decision) => {
+        const feedback = decision === "APPROVE" ? "" : window.prompt("Tell the tenant what needs to be corrected:", "Please review the agreement and complete the missing information.");
+        if (decision !== "APPROVE" && feedback === null) return;
+        try {
+            await api.patch(`${API_ENDPOINTS.APPLICATIONS.BASE}/${app.id}/contract/review`, { decision, feedback });
+            toast.success(decision === "APPROVE" ? "Agreement approved" : "Tenant notified about the agreement review");
+            refetchApplications();
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to review the agreement");
+        }
+    };
     const handleReject = (id) => updateStatusMutation.mutateAsync({ id, status: "REJECTED" });
 
     const handleSendLease = async (app) => {
@@ -262,8 +305,13 @@ const Applications = () => {
             throw error;
         }
     };
-    const handleView = (app) => {
-        setSelectedApplication(app);
+    const handleView = async (app) => {
+        try {
+            const response = await api.get(`${API_ENDPOINTS.APPLICATIONS.BASE}/${app.publicId}`);
+            setSelectedApplication(response.data?.data || response.data);
+        } catch {
+            setSelectedApplication(app);
+        }
         setDialogOpen(true);
     };
 
@@ -412,6 +460,8 @@ const Applications = () => {
                                 onApprove={handleApprove}
                                 onRequestDeposit={handleRequestDeposit}
                                 onSendRequirements={handleSendRequirements}
+                                onCreateContract={handleCreateContract}
+                                onReviewContract={handleReviewContract}
                                 onSendLease={handleSendLease}
                                 onReject={handleReject}
                                 onDelete={handleDelete}
@@ -463,6 +513,13 @@ const Applications = () => {
                 open={dialogOpen}
                 onClose={() => setDialogOpen(false)}
                 application={selectedApplication}
+            />
+
+            <ContractUploadDialog
+                open={contractDialogOpen}
+                onClose={() => { setContractDialogOpen(false); setContractApplication(null); }}
+                onSubmit={handleSubmitContract}
+                isSubmitting={contractSubmitting}
             />
 
             <LeaseRedirectModal

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Eye, Send, Trash2, X, Copy, ChevronDown, ChevronUp, MoreVertical } from "lucide-react";
+import { Check, Eye, Send, Trash2, X, ChevronDown, ChevronUp, MoreVertical } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow, format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,6 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
 import {
     Popover,
     PopoverContent,
@@ -41,6 +40,8 @@ const ApplicationCard = ({
     onApprove, 
     onRequestDeposit,
     onSendRequirements,
+    onCreateContract,
+    onReviewContract,
     onReject, 
     onSendLease, 
     onDelete, 
@@ -57,6 +58,8 @@ const ApplicationCard = ({
 
     const isPlaceholderApp = app.fullName === "N/A" && app.email === "na@example.com" && !app.tenantId;
     const canDeleteApplication = app.status === "REJECTED" || (app.status === "NEW" && isPlaceholderApp);
+    const canCreateContract = app.status === "PENDING" && app.requirementsSentAt && ["NONE", "REJECTED", "RESEND_REQUESTED"].includes(app.contractStatus || "NONE");
+    const canReviewContract = app.contractStatus === "SIGNED";
 
     // Reset dropdown state when pending action changes or component updates
     useEffect(() => {
@@ -197,19 +200,17 @@ const ApplicationCard = ({
                                     >
                                         <Eye className="w-3 h-3 mr-1" /> View
                                     </Button>
-                                    {app.publicId && app.status === "PENDING" && (
+                                    {app.status === "PENDING" && app.tenantId && !app.requirementsSentAt && (
                                         <Button
                                             type="button"
                                             variant="outline"
                                             className="text-xs px-3 py-1.5 rounded-xl border-gray-300"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                navigator.clipboard.writeText(`${window.location.origin}/apply/${app.publicId}`);
-                                                toast.success("Application link copied");
+                                                onSendRequirements?.(app);
                                             }}
                                         >
-                                            <Copy className="w-3 h-3 mr-1" />
-                                            Copy Link
+                                            Create Link
                                         </Button>
                                     )}
                                 </>
@@ -261,18 +262,6 @@ const ApplicationCard = ({
                                 </Button>
                             )}
 
-                            {app.status === "PENDING" && !app.requirementsSentAt && app.tenantId && (
-                                <Button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onSendRequirements?.(app);
-                                    }}
-                                    className="text-xs px-3 py-1.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
-                                >
-                                    Send requirements link
-                                </Button>
-                            )}
-
                             {app.status === "DEPOSIT_SUBMITTED" && (
                                 <Button
                                     onClick={(e) => {
@@ -283,6 +272,26 @@ const ApplicationCard = ({
                                 >
                                     Approve tenant
                                 </Button>
+                            )}
+
+                            {canCreateContract && (
+                                <Button onClick={(e) => { e.stopPropagation(); onCreateContract?.(app); }} className="text-xs px-3 py-1.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90">
+                                    Create Contract
+                                </Button>
+                            )}
+
+                            {canReviewContract && (
+                                <>
+                                    <Button onClick={(e) => { e.stopPropagation(); onReviewContract?.(app, "APPROVE"); }} className="text-xs px-3 py-1.5 rounded-xl bg-green-700 text-white hover:bg-green-800">
+                                        Approve
+                                    </Button>
+                                    <Button onClick={(e) => { e.stopPropagation(); onReviewContract?.(app, "RESEND"); }} className="text-xs px-3 py-1.5 rounded-xl bg-amber-600 text-white hover:bg-amber-700">
+                                        Request Resend
+                                    </Button>
+                                    <Button onClick={(e) => { e.stopPropagation(); onReviewContract?.(app, "REJECT"); }} className="text-xs px-3 py-1.5 rounded-xl bg-red-600 text-white hover:bg-red-700">
+                                        Reject
+                                    </Button>
+                                </>
                             )}
 
                             {/* Pre-approve/reject buttons for new applications */}
@@ -462,19 +471,17 @@ const ApplicationCard = ({
                                 >
                                     <Eye /> View
                                 </Button>
-                                {app.publicId && app.status === "PENDING" && (
+                                {app.status === "PENDING" && app.tenantId && !app.requirementsSentAt && (
                                     <Button
                                         type="button"
                                         variant="outline"
                                         className="flex items-center gap-2 sm:w-32 rounded-xl border-gray-300"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            navigator.clipboard.writeText(`${window.location.origin}/apply/${app.publicId}`);
-                                            toast.success("Application link copied");
+                                            onSendRequirements?.(app);
                                         }}
                                     >
-                                        <Copy className="w-4 h-4" />
-                                        Copy Link
+                                        Create Link
                                     </Button>
                                 )}
                             </>
@@ -489,6 +496,20 @@ const ApplicationCard = ({
                                 <Send />
                                 {isSending ? "Sending..." : "Send Lease"}
                             </Button>
+                        )}
+
+                        {canCreateContract && (
+                            <Button onClick={(e) => { e.stopPropagation(); onCreateContract?.(app); }} className="flex items-center gap-2 sm:w-36 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90">
+                                Create Contract
+                            </Button>
+                        )}
+
+                        {canReviewContract && (
+                            <div className="flex gap-2">
+                                <Button onClick={(e) => { e.stopPropagation(); onReviewContract?.(app, "APPROVE"); }} className="rounded-xl bg-green-700 text-white hover:bg-green-800">Approve</Button>
+                                <Button onClick={(e) => { e.stopPropagation(); onReviewContract?.(app, "RESEND"); }} className="rounded-xl bg-amber-600 text-white hover:bg-amber-700">Resend</Button>
+                                <Button onClick={(e) => { e.stopPropagation(); onReviewContract?.(app, "REJECT"); }} className="rounded-xl bg-red-600 text-white hover:bg-red-700">Reject</Button>
+                            </div>
                         )}
 
                         {canDeleteApplication && (

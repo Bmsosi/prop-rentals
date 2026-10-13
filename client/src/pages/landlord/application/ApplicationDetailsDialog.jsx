@@ -13,6 +13,18 @@ const ApplicationDetailsDialog = ({ open, onClose, application }) => {
     const [signedDocUrls, setSignedDocUrls] = useState({});
     const [loadingDocs, setLoadingDocs] = useState(true);
 
+    const getCount = (value) => {
+        if (value === null || value === undefined || value === "") return "Not provided";
+        if (typeof value === "object") return value.count ?? value.number ?? "Not provided";
+        return value;
+    };
+
+    const formatDate = (value, fallback = "Not provided") => {
+        if (!value) return fallback;
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
+    };
+
     // Fetch signed URLs for S3 documents
     useEffect(() => {
         if (!open || !application) {
@@ -115,10 +127,11 @@ const ApplicationDetailsDialog = ({ open, onClose, application }) => {
                                 <div className="space-y-2">
                                     <h3 className="font-semibold text-lg text-gray-900">Rental Details</h3>
                                     <div className="ml-4 border-l-2 pl-3 border-l-gray-300">
-                                        <p><b>Move-in Date:</b> {application.moveInDate || "Not selected"}</p>
-                                        <p><b>Occupants:</b> {application.occupantsCount ?? "Not provided"}</p>
-                                        <p><b>Pets:</b> {application.petsCount ?? "Not provided"}</p>
-                                        <p><b>Monthly Income:</b> {application.monthlyIncome || "Not provided"}</p>
+                                        <p><b>Move-in Date:</b> {formatDate(application.moveInDate, "Not selected")}</p>
+                                        <p><b>Occupants:</b> {getCount(application.occupants ?? application.occupantsCount)}</p>
+                                        <p><b>Pets:</b> {getCount(application.pets ?? application.petsCount)}</p>
+                                        <p><b>Monthly Income:</b> {application.monthlyIncome ?? "Not provided"}</p>
+                                        <p><b>Payment Method:</b> {application.paymentMethod ?? "Not provided"}</p>
                                         <p><b>Status:</b> {application.status}</p>
                                     </div>
                                 </div>
@@ -133,12 +146,34 @@ const ApplicationDetailsDialog = ({ open, onClose, application }) => {
                                         <p><b>Name:</b> {application.fullName}</p>
                                         <p><b>Email:</b> {application.email}</p>
                                         <p><b>Phone:</b> {application.phone || "No phone provided"}</p>
-                                        <p><b>Date of Birth:</b> {application.dateOfBirth || "Not provided"}</p>
-                                        <p><b>Current Address:</b> {application.currentAddress || "Not provided"}</p>
+                                        <p><b>Date of Birth:</b> {formatDate(application.dateOfBirth)}</p>
+                                        <p><b>Current Address:</b> {application.currentAddress ?? "Not provided"}</p>
+                                        <p><b>Current Landlord:</b> {application.currentLandlord ?? "Not provided"}</p>
+                                        <p><b>Landlord Contact:</b> {application.currentLandlordContact ?? "Not provided"}</p>
+                                        <p><b>Current Job:</b> {application.currentJob ?? "Not provided"}</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+                        {application.message && !application.message.startsWith("{") && (
+                            <div className="space-y-2">
+                                <h3 className="font-semibold text-lg text-gray-900">Message from Tenant</h3>
+                                <p className="rounded-lg bg-gray-50 border p-4 whitespace-pre-wrap">{application.message}</p>
+                            </div>
+                        )}
+
+                        {(application.contractUrl || application.signedContractUrl) && (
+                            <div className="space-y-2">
+                                <h3 className="font-semibold text-lg text-gray-900">Residential Tenancy Agreement</h3>
+                                <p className="text-sm text-gray-600">Agreement status: <span className="font-semibold">{application.contractStatus || "SENT"}</span></p>
+                                <div className="flex flex-wrap gap-3">
+                                    {application.contractUrl && <a className="text-primary underline text-sm" href={application.contractUrl} target="_blank" rel="noreferrer">Download landlord agreement</a>}
+                                    {application.signedContractUrl && <a className="text-primary underline text-sm" href={application.signedContractUrl} target="_blank" rel="noreferrer">View signed agreement</a>}
+                                </div>
+                                {application.contractFeedback && <p className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm">Feedback: {application.contractFeedback}</p>}
+                            </div>
+                        )}
 
                         {/* BOTTOM SECTION: Employment History */}
                         {Array.isArray(application.employmentInfo) && application.employmentInfo.length > 0 && (
