@@ -39,7 +39,7 @@ const ContactSection = ({ sectionRef }) => {
                         Contact Us
                     </h2>
                     <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-500 max-w-2xl leading-relaxed">
-                        Get in touch with us. We'd love to hear from you.
+                        Reach out with us. We'd love to hear from you!
                     </p>
                 </div>
 

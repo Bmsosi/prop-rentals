@@ -14,7 +14,7 @@ const FeaturesSection = ({ sectionRef }) => {
                         Powerful Modules
                     </h2>
                     <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
-                        Everything you need to manage your rental properties efficiently
+                        Everything you need to manage your rental properties efficiently, from accouting, leases and maintenance.
                     </p>
                 </div>
 
